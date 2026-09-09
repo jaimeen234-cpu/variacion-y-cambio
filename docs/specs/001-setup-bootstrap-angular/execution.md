@@ -836,3 +836,104 @@ Es exactamente el riesgo que describe la regla **CC-3** de las guías raíz, cit
 **Corregido con `--amend`** (nada estaba empujado): el commit es ahora `6a8d78c`, con el archivo íntegro, y se reverificó **26/26** y `arch-test` exit 0.
 
 **Regla operativa que sale de aquí:** mientras haya un agente delegado activo, los `git add` van **por ruta explícita**, nunca `-A`. Candidata a lección de kaizen en `/akili-archive`.
+
+---
+
+## T-9 — Scripts *agent-lean*, presupuesto de bundle y auditoría
+
+| | |
+|---|---|
+| **Estado** | ✅ **PASS** — en el **segundo** intento |
+| **Fecha** | 2026-09-09 · última tarea con código del spec |
+| **Implementer** | Antigravity · dispatch `ctx_2fad1a6c18f5` |
+| **Effort** | `medium-high` → `high` en el rework |
+| **Archivos** | `tools/bundle-budget.mjs` (+157) · `tools/test-agent.mjs` (+61) · `src/app/scripts.spec.ts` (+74) · `eslint.config.mjs` · `angular.json` · `package.json` · `package-lock.json` |
+| **Requisitos** | RF-1.2, RF-1.3, RF-1.4, RF-4.1, RF-4.3, RNF-1, RNF-2, RNF-3, RNF-6 |
+
+### Contrato de verificación, ya operativo
+
+| Comando | Resultado |
+|---|---|
+| `npm run test:agent` | exit 0 · **una línea**: `✔ Tests: 31 passed (31) (8 passed (8))` |
+| `npm run test:arch` | exit 0, las tres pasadas |
+| `npm run lint:agent` | exit 0, en silencio |
+| `npm run build` | exit 0 · **gzip real 70,23 KB de 500 (14,0 %)** |
+| `npm audit --audit-level=high` | **0 vulnerabilities** |
+
+`angular.json` fija advertencia 1 MB / error 1,4 MB sin comprimir sobre `initial`. Los cinco scripts existen con los nombres exactos del contrato **y solo esos cinco**: retirar `ng`, `watch` y `test` es correcto, porque RF-4.1 dice *"exactamente"*.
+
+### Intento 1 — Reviewer · `STATUS: FAIL` (dos hallazgos)
+
+**Hallazgo 1 — `process.exit()` truncaba la salida de un fallo.** El cierre de `tools/test-agent.mjs` era:
+
+```js
+process.stdout.write(stdout);
+process.stderr.write(stderr);
+process.exit(code ?? 1);
+```
+
+En Node, `process.stdout` es **asíncrono cuando el destino es un pipe**, y `process.exit()` termina el proceso sin esperar a las escrituras pendientes. Un `npm run test:agent` capturado por un agente o redirigido a un log corre **siempre** sobre un pipe: en cuanto el volcado de un fallo supera el búfer (~64 KB — el caso de *"fallan muchas pruebas"*, justo cuando la evidencia completa importa), la cola se pierde **en silencio y sin error**. Una salida que parece completa y no lo es: exactamente el modo de fallo contra el que existe RF-1.4. **Regla violada:** RF-1.4 · `AGENTS.md` §Verification Commands (*"Un fallo es evidencia: se reporta entero, sin recortar"*) · casilla de T-9.
+
+**Hallazgo 2 — la compuerta de 500 KB nunca se demostró fallando.** La evidencia era la corrida en verde a 70,23 KB: la única rama ejercitada era la que aprueba. *"Un `> MAX_GZIP_BYTES` que jamás se disparó no está verificado, es leído."* El brief lo pedía explícitamente y no apareció en el reporte.
+
+**Lo que el Reviewer aprobó y no se rehízo:** el **inconcluso** de `bundle-budget.mjs` (tres `process.exit(1)` antes de poder medir —sin `index.html`, `initialFiles` vacío, `missingFiles`— y ningún `exit 0` alcanzable con el conjunto sin resolver); el **gzip real** con `zlib.gzipSync` sobre los bytes, con el conjunto derivado de `index.html` (`script src` + `link rel=stylesheet|modulepreload`, excluyendo orígenes remotos), que es el chunk inicial y no todo `dist/`; y `scripts.spec.ts`, que **lee `AGENTS.md`** de verdad y además pinea la lista, atrapando el renombrado en ambos sentidos.
+
+### Intento 2 (rework) — Reviewer · `STATUS: PASS`
+
+**Corrección 1.** `process.exitCode = 0` y `process.exitCode = code ?? 1`. **Cero ocurrencias de `process.exit(` en el archivo**, verificado por `grep`. El drenado lo hace el bucle de eventos de Node por omisión.
+
+**Corrección 2 — el sabotaje del presupuesto, con inclusión real en el bundle.** Instaló `xlsx`, `three`, `pdfjs-dist` y `lodash` y **los usó** desde `src/app/app.ts`:
+
+```
+Total comprimido (Gzip real):   550.83 KB
+❌ FALLO DE PRESUPUESTO: El chunk inicial supera los 500.00 KB permitidos por 50.83 KB.
+```
+
+El Reviewer confirmó que fue **uso** y no import muerto por dos vías independientes: `main-*.js` a 1653,08 KB raw / 483,35 KB gzip es incompatible con *tree-shaking* (el `main` limpio son 8,60 KB), y la advertencia `Module 'lodash' used by 'src/app/app.ts' is not ESM` solo la emite el bundler cuando el módulo CommonJS entra al grafo. Reversión limpia en `package.json` **y** `package-lock.json`; build de vuelta en 70,23 KB.
+
+### Camino rojo — ejecutado por el **Leader**, no por el Implementer
+
+El Reviewer marcó un tercer defecto: el arreglo tocó **exactamente** la rama que imprime el volcado y fija el código de salida, y el rework solo ejercitó la verde. *"Una afirmación de presencia sustituyendo a una prueba de efecto"*, y el efecto no es cosmético — si `test:agent` saliera `0` ante una suite roja, **todo verde futuro de este repositorio quedaría sin valor**, y ni el hook `akili-tasks-gate.sh` ni el `&&` de `build` lo notarían.
+
+**Lo ejecutó el Leader** en lugar de gastar el tercer intento: correr una verificación es trabajo de orquestación y la remediación no tocaba ningún archivo del entregable. Inyectado `expect(1).toBe(2)` en `scripts.spec.ts`, corrido a través de un pipe, revertido.
+
+```
+ FAIL   src/app/scripts.spec.ts > Contrato de scripts … > FALLO DELIBERADO para verificar RF-1.4
+AssertionError: expected 1 to be 2 // Object.is equality
+
+- Expected
++ Received
+
+- 2
++ 1
+
+ ❯ src/app/scripts.spec.ts:76:15
+     75|   it('FALLO DELIBERADO para verificar RF-1.4', () => {
+     76|     expect(1).toBe(2);
+       |               ^
+     77|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+```
+
+| Medida | Valor |
+|---|---|
+| Código de salida en rojo | **1** |
+| Código de salida en verde tras revertir | **0** |
+| Bytes capturados a archivo | **4932**, íntegros hasta el marcador `⎯[1/1]⎯` |
+| Contenido | diff esperado/recibido + marco de código con el cursor `^` en la columna exacta |
+
+**Salvedad declarada al auditor:** 4932 bytes **no** superan el búfer del pipe, así que esta corrida **no reproduce** el escenario de >64 KB que motivó el hallazgo. Su respuesta, aceptada: *"el escenario de >64 KB era la consecuencia del defecto, no el defecto; la causa era la llamada forzada a `process.exit()`, y esa ya no existe. Sin ella, el drenado lo hace el bucle de eventos de Node por defecto, no una construcción a medida de este repositorio."*
+
+### Evidencia de los dos huecos restantes — ejecutada por el Leader
+
+| Requisito | Comando | Resultado |
+|---|---|---|
+| **RF-4.3** | `npm run test:agent -- --include='**/scripts.spec.ts'` | `✔ Tests: 5 passed (5) (1 passed (1))` — **un solo archivo**, no los ocho |
+| **RNF-2** | `npm run test:agent` con el checkout **en reposo** | `real 2.15` s contra 30 s de presupuesto |
+
+El descalificador (b) de T-9 exige medir RNF-2 sin otro proceso compilando (regla CC-2): así se hizo.
+
+### RNF-6 — licencias de las dependencias de runtime
+
+Diez dependencias, todas dentro de **MIT / Apache-2.0 / 0BSD / OFL-1.1**: `@angular/{common,compiler,core,forms,platform-browser,router}`, `rxjs`, `tslib`, `@fontsource/poppins`, `@fontsource/jetbrains-mono`. Las dos de `@fontsource` son **OFL-1.1**, la excepción declarada en T-5 y **pendiente de formalizar en T-10**. `eslint ^10.10.0` es solo de desarrollo y MIT; su árbol transitivo queda dentro de MIT / Apache-2.0 / BSD / ISC.

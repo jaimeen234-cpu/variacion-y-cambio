@@ -2,11 +2,11 @@
   "name": "variacion-y-cambio",
   "version": "0.0.0",
   "scripts": {
-    "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
-    "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "build": "ng build && node tools/bundle-budget.mjs",
+    "test:agent": "node tools/test-agent.mjs",
+    "test:arch": "node tools/arch-test.mjs",
+    "lint:agent": "eslint --quiet"
   },
   "private": true,
   "packageManager": "npm@11.6.0",
@@ -29,6 +29,7 @@
     "@angular/build": "^21.2.23",
     "@angular/cli": "^21.2.23",
     "@angular/compiler-cli": "^21.2.0",
+    "eslint": "^10.10.0",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2",

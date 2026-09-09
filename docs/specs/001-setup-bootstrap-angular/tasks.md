@@ -291,7 +291,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
 
 ---
 
-### [ ] T-9 — Scripts *agent-lean*, presupuesto de bundle y auditoría
+### [x] T-9 — Scripts *agent-lean*, presupuesto de bundle y auditoría
 
 - **Capa:** raíz (configuración)
 - **Depende de:** T-3, T-5, T-6
