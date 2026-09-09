@@ -1,0 +1,97 @@
+# Despliegue del sitio estático en GitHub Pages.
+#
+# Contrato: docs/infrastructure.md §3 "Deployment Strategy".
+#   - Artefacto: dist/ producido por `ng build --configuration production`
+#   - Disparo: push a la rama por defecto
+#   - Verificación previa: compilación limpia + pruebas + `npm audit` sin severidad alta
+#   - Fallback de rutas: la SPA usa History API, así que 404.html debe ser copia de
+#     index.html. Sin eso, recargar /laboratorio devuelve 404 — la única sorpresa de
+#     infraestructura que este sistema puede dar.
+#
+# Nota de estado (2026-09-09): la prueba de arquitectura (`npm run test:arch`) y los
+# scripts agent-lean (`test:agent`, `lint:agent`) todavía no existen — los crean las
+# tareas T-3 y T-9 del spec 001-setup-bootstrap-angular. Cuando existan, se añaden a
+# la compuerta de abajo. Hoy la compuerta corre lo que hay, y lo dice en voz alta en
+# lugar de fingir una verificación completa.
+
+name: Desplegar en GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un despliegue a la vez. No se cancela el que está en curso: al ser estático, dejar
+# a medias un deploy es peor que esperar a que termine.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  verificar-y-construir:
+    name: Verificar y construir
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Auditoría de dependencias
+        run: npm audit --audit-level=high
+
+      - name: Pruebas
+        run: npx ng test --watch=false
+
+      - name: Configurar Pages
+        id: pages
+        uses: actions/configure-pages@v5
+        with:
+          # Habilita Pages en el repositorio si aún no lo está. Es la vía que no
+          # exige permiso de administrador para una persona: actúa el GITHUB_TOKEN
+          # del workflow, con el `pages: write` declarado arriba.
+          enablement: true
+
+      - name: Compilar producción
+        # base-href tiene que ser /<repo>/ porque esto es una project page
+        # (jaimeen234-cpu.github.io/variacion-y-cambio/), no una user page.
+        # Se toma de la variable del propio runner para que un fork o un renombrado
+        # del repositorio no rompa el despliegue en silencio.
+        run: npx ng build --configuration production --base-href "/${GITHUB_REPOSITORY#*/}/"
+
+      - name: Fallback de rutas y desactivar Jekyll
+        run: |
+          set -euo pipefail
+          SALIDA=dist/variacion-y-cambio/browser
+          test -f "$SALIDA/index.html" || { echo "No existe $SALIDA/index.html"; exit 1; }
+          cp "$SALIDA/index.html" "$SALIDA/404.html"
+          touch "$SALIDA/.nojekyll"
+
+      - name: Subir el artefacto
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/variacion-y-cambio/browser
+
+  desplegar:
+    name: Desplegar
+    needs: verificar-y-construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - name: Publicar en GitHub Pages
+        id: despliegue
+        uses: actions/deploy-pages@v4

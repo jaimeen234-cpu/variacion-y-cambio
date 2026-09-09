@@ -52,7 +52,19 @@ No hay entorno de *staging*. Con un artefacto estático, sin base de datos y sin
 | Versionado | El artefacto se corresponde 1:1 con un commit de la rama por defecto |
 | Verificación previa al despliegue | Compilación limpia + suite de pruebas + prueba de arquitectura (TRD §12) + `npm audit` sin severidad alta/crítica (SEC-3) |
 
-**Pendiente:** el pipeline se crea en el spec de bootstrap del proyecto, no antes. Hasta entonces, el despliegue es manual y así se declara.
+**Estado del pipeline (2026-09-09):** existe — [`.github/workflows/deploy-pages.yml`](../.github/workflows/deploy-pages.yml). Implementa esta tabla: dispara en `push` a `main` y en `workflow_dispatch`, verifica (`npm audit --audit-level=high` + `npx ng test --watch=false`), compila con `--base-href "/<repo>/"` porque es una *project page*, copia `index.html` a `404.html` por la regla de enrutamiento de abajo, y publica con `actions/deploy-pages`.
+
+Tres cosas que el workflow **todavía no** hace, y por qué:
+
+| Falta | Motivo | Se cierra en |
+|---|---|---|
+| `npm run test:arch` en la compuerta | El script no existe aún | Spec `001`, T-3 (la herramienta) y T-9 (el script npm) |
+| `npm run test:agent` / `lint:agent` | Ídem | Spec `001`, T-9 |
+| Un despliegue real | El remoto está vacío y nunca se ha empujado | Decisión del usuario, no técnica |
+
+El workflow lo dice en su propio encabezado en lugar de fingir una verificación completa. Cuando T-3 y T-9 aterricen, esas líneas se añaden a la compuerta.
+
+**Habilitación de Pages sin permiso de administrador:** el paso `actions/configure-pages@v5` lleva `enablement: true`. Importa porque la cuenta que empuja tiene `push` pero **no `admin`** sobre `jaimeen234-cpu/variacion-y-cambio`: quien habilita Pages es el `GITHUB_TOKEN` del workflow con el `pages: write` declarado, no la persona.
 
 **Regla de enrutamiento:** la SPA usa rutas de History API, así que el hosting debe hacer *fallback* de rutas desconocidas a `index.html` (en GitHub Pages, copiar `index.html` como `404.html`). Sin eso, recargar `/lazo-termico` devuelve un 404 — y esa es la única sorpresa de infraestructura que este sistema puede dar.
 
