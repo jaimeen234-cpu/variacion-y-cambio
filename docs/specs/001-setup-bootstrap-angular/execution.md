@@ -125,7 +125,7 @@ Añadidos por el Implementer sin que ninguna casilla los exigiera: `ChangeDetect
 
 Remediación verificada: `npx ng test --watch=false --include='<ruta>'`. El Reviewer comprobó en el esquema de `@angular/build:unit-test` que el builder acepta `include`, `exclude`, `filter`, `watch`, `reporters` y `coverage` — así que **T-9 puede construir `test:agent` sobre este builder**, y la fila `test:agent -- --include='**/<archivo>.spec.ts'` de las guías raíz (RF-4.3) sigue siendo realizable.
 
-**Estado: pendiente de aprobación del usuario** antes de despachar T-2. Es una corrección a un documento aprobado, y eso para la corrida bajo la propia excepción que el modo corrido conserva.
+**Estado: aprobado y aplicado.** Ver [`## Pivot Record: corrección del comando de verificación`](#pivot-record--corrección-del-comando-de-verificación) al final de este documento.
 
 #### ADVISORY del Reviewer *(lentes 4R — no gatillan retrabajo)*
 
@@ -147,3 +147,66 @@ Remediación verificada: `npx ng test --watch=false --include='<ruta>'`. El Revi
 #### Verificación final de T-1
 
 Las seis casillas de *Hecho cuando* cerradas y comprobadas de forma independiente por el Leader: `npm start` → 200 · `npx ng build` → exit 0 · `angular.json` con `scss`, standalone y zoneless · `.nvmrc` `22.18.0` = `node -v` `v22.18.0` con `engines` coherente · `docs/`, `AGENTS.md`, `CLAUDE.md`, `.agents/` y `.claude/` intactos según `git status` · `.tmp-scaffold/` inexistente.
+
+---
+
+## Pivot Record — corrección del comando de verificación
+
+| Campo | Valor |
+|---|---|
+| Descubierto en | T-1, por el Reviewer |
+| Fecha | 2026-09-09 |
+| Alcance | `tasks.md` — seis líneas de **Verificación** |
+| Aprobado por | El usuario, 2026-09-09, antes de despachar T-2 |
+| ¿Afecta requisitos o diseño? | **No.** Ningún RF, ningún RNF y ninguna DD cambian. Es el *medio* de verificación el que estaba mal escrito, no lo que se verifica |
+| ¿ADR afectado? | Ninguno |
+
+### El bloqueo
+
+`tasks.md` mandaba `npx vitest run <ruta>`. El proyecto no tiene `vitest.config.*`: el runner vive detrás del builder `@angular/build:unit-test`, que es quien aporta el entorno jsdom, el compilador de Angular y la resolución de `templateUrl`. Un `vitest` desnudo no dispone de ninguno de los tres.
+
+Consecuencia por tarea, según el análisis del Reviewer:
+
+| Tarea | Habría pasado |
+|---|---|
+| T-2 | Sí, pero **por accidente** — clases planas sin TestBed |
+| T-4 | Dudoso |
+| T-6 | No — `RouterTestingHarness` |
+| T-7 | No — TestBed y componentes con `templateUrl` |
+| T-8 | No — arranca el `app.config.ts` real |
+
+Un comando de verificación que no corre no es una compuerta laxa: es **una compuerta ausente que parece presente**. Exactamente la clase de defecto que la §8 de `requirements.md` existe para impedir.
+
+### La corrección
+
+`npx ng test --watch=false --include=<ruta>`, verificada contra `node_modules/@angular/build/src/builders/unit-test/schema.json`: `include` es un arreglo de cadenas con **manejo especial de rutas de directorio** (incluye todos los archivos de prueba que contenga), y el flag se repite para añadir entradas.
+
+| Tarea | Antes | Después |
+|---|---|---|
+| T-1 | `npx vitest run` | `npx ng test --watch=false` |
+| T-2 | `npx vitest run src/app/domain src/app/application` | `npx ng test --watch=false --include=src/app/domain --include=src/app/application` |
+| T-4 | `npx vitest run src/app/ui/styles` | `npx ng test --watch=false --include=src/app/ui/styles` |
+| T-6 | `npx vitest run src/app/ui` | `npx ng test --watch=false --include=src/app/ui` |
+| T-7 | `npx vitest run src/app/ui/core` | `npx ng test --watch=false --include=src/app/ui/core` |
+| T-8 | `npx vitest run src/app/infrastructure` | `npx ng test --watch=false --include=src/app/infrastructure` |
+
+`Vitest` **sigue siendo el runner**: DD-1 no se toca. Lo que cambia es cómo se le invoca.
+
+### Barrido de cierre en dos direcciones (RF-10.3)
+
+**Hacia adelante** — `grep -rn "vitest\|Vitest"` sobre `docs/`, `AGENTS.md` y `CLAUDE.md`. Seis ocurrencias del comando, **una más de las cuatro que identificó el análisis inicial**: se había escapado **T-6**, que usa `RouterTestingHarness` y por tanto era un fallo seguro. Las seis corregidas. Las menciones restantes a *Vitest* (DD-1, la tabla de versiones, TA-5, la fila de riesgo de §12, `proposal.md`) hablan del **runner**, que no cambió, y se declaran intencionales.
+
+**Hacia atrás** — quién cita las secciones corregidas:
+
+| Documento que cita | Veredicto |
+|---|---|
+| `AGENTS.md:74` — `npm run test:agent -- --include='**/<archivo>.spec.ts'` | ✅ **Reforzado, no invalidado.** Era una suposición sin verificar; el esquema del builder confirma que `--include` existe. **RF-4.3 queda respaldado** y T-9 puede construir `test:agent` sobre este builder |
+| `design.md` §11, estrategia de pruebas | ✅ No nombra comandos concretos. Nada que corregir |
+| `requirements.md` §9, trazabilidad | ✅ Solo cita `test:arch`, que no está afectado |
+| `proposal.md` — *"la primera tarea determina el runner y fija el comando real"* | ✅ Esto es precisamente lo que ocurrió. Coherente |
+
+**Ningún documento quedó afirmando algo falso.**
+
+### Nota sobre un riesgo declarado que se materializó de otra forma
+
+`design.md` §12 anticipaba: *"Vitest en Angular 21 con pruebas de dominio en Node podría necesitar configuración de entorno por archivo"*, con la mitigación de declarar el entorno `node` por patrón. El riesgo era el correcto; la **forma** fue otra — no hace falta configurar entornos, hace falta invocar el runner a través del builder, que ya los resuelve. La fila de riesgo no es falsa y se deja como está.

@@ -50,7 +50,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
   - Crear `.nvmrc` con la versión de Node en uso y declarar `engines` en `package.json`.
   - Verificar que el `.gitignore` generado incluye `node_modules/`, `dist/` y `.angular/`; completarlo si falta alguno.
 - **Fuera de alcance:** cualquier archivo bajo `src/app/domain|application|infrastructure`; los scripts del contrato (son T-9).
-- **Verificación:** `npm start` responde `200` en `http://localhost:4200` · `npx ng build` termina en `0` · `npx vitest run` ejecuta la suite generada.
+- **Verificación:** `npm start` responde `200` en `http://localhost:4200` · `npx ng build` termina en `0` · `npx ng test --watch=false` ejecuta la suite generada.
 - **Descalificador de la evidencia:** si el proceso de `npm start` se levantó pero la petición HTTP se hizo antes de que el servidor terminara de compilar, un `curl` fallido **no** es evidencia de fallo. Esperar el mensaje de compilación completa y reintentar; si sigue fallando, entonces sí es fallo.
 - **Entrada que haría fallar la verificación:** borrar `src/main.ts` — el build debe romper.
 - **Hecho cuando:**
@@ -82,7 +82,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
   - Registrar los proveedores en `app.config.ts`.
   - Pruebas: `SelloDeTiempo` acepta válidos y **rechaza** negativos y no finitos; `SellarEvento` con `RelojFijo` **sin `TestBed`**.
 - **Fuera de alcance:** modelo de dominio del simulador; cualquier otro puerto.
-- **Verificación:** `npx vitest run src/app/domain src/app/application`
+- **Verificación:** `npx ng test --watch=false --include=src/app/domain --include=src/app/application`
 - **Descalificador de la evidencia:** si la prueba de `SellarEvento` importa algo de `@angular/*` para construirse, la prueba pasa pero **no demuestra RF-7.2**. Revisar los imports del archivo de prueba, no solo su resultado.
 - **Entrada que haría fallar la verificación:** pasar `-1` a `SelloDeTiempo` y esperar que lo acepte.
 - **Hecho cuando:**
@@ -147,7 +147,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
   - Prueba que compara la lista de hex de acentos y gradientes contra los valores verificados de BLK.
   - Verificación de que ningún otro archivo del proyecto contiene hex, `rgb()` o `hsl()`, permitiendo `transparent`, `currentColor` e `inherit`.
 - **Fuera de alcance:** aplicar los tokens a cualquier pantalla real; fuentes (T-5).
-- **Verificación:** `npx vitest run src/app/ui/styles` · `grep -rEn '#[0-9a-fA-F]{3,8}|rgb\(|hsl\(' src --include='*.scss' --include='*.ts' --include='*.html' | grep -v '_tokens.scss'` debe salir vacío.
+- **Verificación:** `npx ng test --watch=false --include=src/app/ui/styles` · `grep -rEn '#[0-9a-fA-F]{3,8}|rgb\(|hsl\(' src --include='*.scss' --include='*.ts' --include='*.html' | grep -v '_tokens.scss'` debe salir vacío.
 - **Descalificador de la evidencia:** la prueba comprueba que el **valor** del token es correcto. **No puede probar que el token correcto se use en el lugar correcto** — un componente que usara `--vc-danger` para un estado de éxito pasaría. Esa clase de defecto queda para la revisión del diff (riesgo aceptado, declarado en requisitos §8).
 - **Entrada que haría fallar la verificación:** cambiar `#e14eca` por `#e14ecb` en `_tokens.scss`.
 - **Hecho cuando:**
@@ -206,7 +206,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
   - Pruebas con `RouterTestingHarness`: navegar a las seis rutas y verificar que renderizan sin error.
   - Prueba de que una URL desconocida muestra `no-encontrado` y **no** redirige a la raíz.
 - **Fuera de alcance:** contenido real de cualquier página; el layout del laboratorio.
-- **Verificación:** `npx vitest run src/app/ui` · `npx ng build` produce un chunk diferido por página.
+- **Verificación:** `npx ng test --watch=false --include=src/app/ui` · `npx ng build` produce un chunk diferido por página.
 - **Descalificador de la evidencia:** una prueba que solo afirma "el componente se creó" es una **afirmación de presencia**: no prueba que la ruta renderice ni que el placeholder sea visible. La prueba debe navegar por el router y comprobar contenido renderizado. Si solo instancia el componente, la cobertura de RF-6.2 es **inconcluso**.
 - **Entrada que haría fallar la verificación:** cambiar el `path` de una ruta y esperar que la navegación siga funcionando.
 - **Hecho cuando:**
@@ -235,7 +235,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
   - Registrar el `ErrorHandler` en `app.config.ts`.
   - Prueba que lanza una excepción y verifica que aparece la pantalla y **no** una pantalla en blanco.
 - **Fuera de alcance:** telemetría remota (TRD §3.6: deliberadamente ausente).
-- **Verificación:** `npx vitest run src/app/ui/core`
+- **Verificación:** `npx ng test --watch=false --include=src/app/ui/core`
 - **Descalificador de la evidencia:** si la prueba verifica que `console.error` fue llamado pero **no** que la pantalla se renderizó, no cubre RF-9.2 — el requisito es sobre lo que el usuario ve, no sobre el registro.
 - **Entrada que haría fallar la verificación:** quitar el `ErrorHandler` de los proveedores.
 - **Hecho cuando:**
@@ -261,7 +261,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
   - Prueba que arranca la configuración **real** de la aplicación (la misma que importa `main.ts`, no una copia) y resuelve **cada** token exportado por `infrastructure/di/tokens.ts`.
   - La lista de tokens se deriva de las exportaciones del módulo, no se escribe a mano: así, un token nuevo sin proveedor rompe la prueba automáticamente.
 - **Fuera de alcance:** puertos que aún no existen.
-- **Verificación:** `npx vitest run src/app/infrastructure`
+- **Verificación:** `npx ng test --watch=false --include=src/app/infrastructure`
 - **Descalificador de la evidencia:** si la prueba construye su propio arreglo de proveedores en lugar de importar el de la aplicación, pasa verde con la configuración real **rota**. Revisar que el import apunte a `app.config.ts`.
 - **Entrada que haría fallar la verificación:** borrar la entrada de `SELLAR_EVENTO` de `providers.ts`.
 - **Hecho cuando:**
