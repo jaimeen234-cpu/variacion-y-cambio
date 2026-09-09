@@ -354,7 +354,7 @@ Cambios que este spec introduce en documentos constitucionales. Todos están nom
 | RF-6.1 – RF-6.3 | Componente | `RouterTestingHarness` | Navegar a las seis rutas |
 | **RF-6.4** | ⚠️ **No verificable automáticamente** | — | Es una propiedad de specs futuros. Se cubre en la revisión del diff de `002/02`, `03` y `05`: si tocan `app.routes.ts`, el Reviewer marca FAIL |
 | RF-7.1, RF-7.3 | Automática | Prueba que arranca `app.config.ts` real y resuelve cada token | |
-| RF-7.2 | Automática | Prueba de `SellarEvento` con `RelojFijo`, **sin `TestBed`** | |
+| RF-7.2 | Automática | Prueba de `SellarEvento` con un **doble local del puerto `Reloj`**, **sin `TestBed`** | |
 | RF-8.1 | Automática | `tools/check-external-origins.mjs` | Solo URLs literales (limitación declarada) |
 | RF-8.2 | Manual | `execution.md` | Cargar con la red deshabilitada y confirmar la tipografía |
 | RF-9.1, RF-9.3 | Automática | Prueba de estilos base + `grep` de la ausencia de bloque light | |

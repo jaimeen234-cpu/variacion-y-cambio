@@ -63,7 +63,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
 
 ---
 
-### [ ] T-2 — Cadena hexagonal del reloj a través de las cuatro capas
+### [x] T-2 — Cadena hexagonal del reloj a través de las cuatro capas
 
 - **Capa:** `domain/`, `application/`, `infrastructure/`
 - **Depende de:** T-1
@@ -80,7 +80,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
   - `infrastructure/tiempo/reloj-sistema.ts` y `reloj-fijo.ts`.
   - `infrastructure/di/tokens.ts` (`RELOJ`, `SELLAR_EVENTO`) y `providers.ts` con `useFactory`.
   - Registrar los proveedores en `app.config.ts`.
-  - Pruebas: `SelloDeTiempo` acepta válidos y **rechaza** negativos y no finitos; `SellarEvento` con `RelojFijo` **sin `TestBed`**.
+  - Pruebas: `SelloDeTiempo` acepta válidos y **rechaza** negativos y no finitos; `SellarEvento` con un **doble en memoria del puerto `Reloj`, declarado en el propio archivo de prueba** — no con `RelojFijo`, que vive en `infrastructure/` y cruzaría la frontera de capa — **sin `TestBed`**.
 - **Fuera de alcance:** modelo de dominio del simulador; cualquier otro puerto.
 - **Verificación:** `npx ng test --watch=false --include=src/app/domain --include=src/app/application`
 - **Descalificador de la evidencia:** si la prueba de `SellarEvento` importa algo de `@angular/*` para construirse, la prueba pasa pero **no demuestra RF-7.2**. Revisar los imports del archivo de prueba, no solo su resultado.

@@ -1,0 +1,312 @@
+---
+name: akili-execute
+description: Execute approved specs systematically following the AKILI-SPECS methodology with spec-to-code traceability.
+license: MIT
+metadata:
+  author: Juan Carlos Cadavid (jcadavid.com)
+---
+
+# Execute AKILI-SPECS Tasks
+
+Execute implementation tasks from an approved AKILI-SPECS spec path using the AKILI **Leader → Implementer → Reviewer** multi-agent triad. Read `tasks.md`, choose the next eligible task, delegate implementation, audit the diff, retry on failure (max 3 attempts), update task status, and record the full audit trail in `execution.md`.
+
+Execution should be incremental. Do not turn one approved task into a broader refactor unless the spec explicitly requires it or the user approves the scope change.
+
+## Usage
+
+```
+/akili-execute <spec-path>
+```
+
+**Examples:**
+
+- `/akili-execute loan`
+- `/akili-execute enhancements/renewals`
+
+## Arguments
+
+- `$ARGUMENTS` — Relative path under `docs/specs/` that already contains `requirements.md`, `design.md`, and `tasks.md`.
+
+## Output
+
+Each successful task execution should produce:
+
+- focused code or documentation changes within task scope
+- updated task status in `tasks.md`
+- an appended audit entry in `execution.md` covering every Implementer attempt and every Reviewer verdict
+- verification evidence from the command or check listed in the task
+- a Reviewer PASS verdict before the task is marked complete
+
+Use `[~]` for a started but incomplete or blocked task, `[x]` for a completed task, and `[ ]` for pending work.
+
+---
+
+## Multi-Agent Triad
+
+In this command you act as the **Leader** (Orchestrator). You delegate concrete work to two subordinate agent roles defined in the project's `.agents/` directory:
+
+- `.agents/leader.md` — orchestration rules and audit conventions (your own playbook).
+- `.agents/implementer.md` — the persona used when delegating implementation.
+- `.agents/reviewer.md` — the persona used when delegating spec-conformance audit.
+
+If `.agents/` is missing, run `/akili-constitution` first to scaffold it. Do not invent personas inline — the constitution is the source of truth.
+
+**Delegation mechanism by tool:**
+
+- **Claude Code / OpenCode:** if the project has tool-native AKILI agent wrappers (scaffolded by `/akili-constitution` Step 8E — e.g. `.claude/agents/akili-implementer.md` / `akili-reviewer.md` with `model:` bindings from the `## Model Routing` registry), **spawn those named agents** so each role runs on its tier's model and author ≠ auditor is enforced by configuration. Otherwise, spawn a focused subagent (or sub-prompt context) seeded with the persona file plus the task/diff context.
+- **Google Antigravity:** invoke `invoke_subagent` (or the equivalent workflow primitive) using prompts read from `.agents/` (no per-agent model binding — guidance-only routing).
+
+The Leader does not write production code itself unless the rework loop is exhausted and the user has explicitly approved a fallback.
+
+**Runtime-failure fallback (per role):** when the harness itself cannot spawn a subagent (spawn error, terminal/pane failure — an environment blocker, not a work FAIL), retry once, then degrade by role — never improvise ad-hoc:
+
+| Role | Fallback on runtime failure |
+|---|---|
+| Implementer | Ask the user to approve the Leader-inline fallback (the no-code rule above stands — runtime failure does not waive it). Record the failure and the decision in `execution.md` |
+| Reviewer | **Never inline** — the Leader reviewing work it supervised breaks `author ≠ auditor`, and a runtime failure does not suspend a correctness constraint. Offer the user: a different model (`/model`), a cross-host dispatch (per the registry), or an explicit recorded waiver |
+| Tester | The `/akili-test` Deployment Rule already defines the inline path — use it and record it |
+
+**Delegation Thresholds:** the Leader's inline-vs-delegate boundary is quantified in `.agents/leader.md` → *Delegation Thresholds* (inline only for 1-file checks and puntual verifications; 4+ full-file reads → scout subagent; 2+ non-trivial file writes → Implementer; CodeGraph lookups don't count toward the read threshold). Apply it to your own research inside this command — e.g. investigating a Reviewer FAIL across many files is scout work, not Leader-inline work.
+
+**Delegation Ceiling:** that table is the floor; `.agents/leader.md` → *Delegation Ceiling* is the cap, and on current-generation models it is the one that binds. One subagent beats several for a single task, parallelism is bounded by the count of genuinely independent tasks in `tasks.md`, you commit to a delegation rather than re-deriving its result, and you never spawn a subagent to verify your own work. **The Implementer → Reviewer gate is exempt** — it is `author ≠ auditor` independence, not self-verification, and is never collapsed for efficiency.
+
+**Communication economy:** load the `caveman` skill and apply its Scope Contract to all transient output in this command — inter-agent messages (Leader ↔ Implementer/Reviewer briefs, reports, feedback relays) at `full`, user-visible progress lines at `lite`. It never applies to `execution.md` audit entries, PR descriptions, HITL summaries, Pivot blockers, or verbatim evidence (Reviewer FAIL reports pass unchanged — the Structured Feedback rule wins).
+
+---
+
+## Behavior
+
+### Step 0: Load Context
+
+**Model checkpoint:** As Leader you run best on **T1** — orchestration here is judgment, not dispatch: you decompose in flight, **select each Implementer's skills**, adjudicate Reviewer FAILs, and decide pivots. You write no code, but these calls gate the whole run (low volume, high leverage). The Implementer/Reviewer route through the Step 8E agent wrappers (their own tier models — Implementer T2, Reviewer T3) when present. If the project's `## Model Routing` registry (root `AGENTS.md`/`CLAUDE.md`) maps T1 to a model different from the current session model, check the direction first — the registry is a floor, not a ceiling: if the session model is the stronger one (e.g. a newer generation than a stale entry), pass silently and flag the registry entry for update instead of recommending a downgrade. Only when the registry model is stronger for this tier, tell the user in one line — e.g. *"The Leader loop is T1 — the registry recommends `/model opus`; you are on sonnet"* — and offer to switch (`/model …` in Claude Code, the model selector in OpenCode) at the first approval pause. Never block on this; continuing on the current model is always allowed.
+
+**Token Optimization (Prompt Caching):** To maximize prompt caching, always read the constitutional baseline documents FIRST and in the exact same order across all sessions before reading task-specific files.
+
+1. Read the project constitutional docs (IN THIS ORDER):
+   - root `CLAUDE.md`
+   - `AGENTS.md`
+   - `docs/prd.md`
+   - `docs/ux-ui/design.md` (legacy fallback: `docs/system-design/design.md`)
+   - `docs/trd/trd.md` (legacy fallback: `docs/detailed-design/detailed-design.md`)
+   - Package-level `CLAUDE.md` and `AGENTS.md` files if they exist
+
+   (`docs/specs/general-setup/` is deliberately **not** in this list: those are the *format templates* `/akili-specify` writes specs from. By the time execute runs, the spec documents are already written and this command's own log format is defined below — the executor consumes specs, it never authors them.)
+2. Read the AKILI-SPECS documents for the spec path:
+   - `docs/specs/$ARGUMENTS/requirements.md`
+   - `docs/specs/$ARGUMENTS/design.md`
+   - `docs/specs/$ARGUMENTS/tasks.md`
+3. Read `docs/specs/$ARGUMENTS/execution.md` if it exists — **bounded, never cover to cover**: the Document Control block, the entry for any `[~]` task you may resume, and the most recent task entry. The log is append-only history that grows with every task; routine task selection does not need it, and reading it whole makes every run of a spec cost more than the one before. The full read belongs to `/akili-resume`, a HALT investigation, or a Pivot — the moments that are *about* the history.
+   - Also read `docs/specs/kaizen-log.md` if it exists — ONLY the `## Active Lessons` table (skip `## Entries`).
+4. Read the agent personas — **which ones depends on how you will spawn**:
+   - `.agents/leader.md` — always: it is your own playbook.
+   - `.agents/implementer.md` and `.agents/reviewer.md` — **only when the project has no Step 8E wrapper for that role.** A wrapper's entire body is the instruction to load its own persona, so a wrapper spawn reads it in the worker's context; the Leader reading it too pays the same tokens twice, and re-sending it in the brief pays them a third time as output. With wrappers present you orchestrate against the roles' **contracts** — the report shapes and `STATUS:` lines this command already defines — not against their persona text.
+5. Identify current task state: `[x]`, `[~]`, `[ ]`.
+
+### Step 1: Select Next Task(s)
+
+1. Find the next executable task by document order where:
+   - status is `[ ]` or `[~]`
+   - all dependencies are `[x]`
+2. If a task is `[~]`, resume it using `execution.md` context.
+3. If no tasks are eligible, report completion or blocking state and stop.
+4. **Parallel Execution:** If multiple tasks are eligible AND they are completely independent (e.g., they touch completely different domains or files), you MAY spawn multiple Implementers in parallel to execute them concurrently. Otherwise, prefer executing the first task by document order to avoid merge conflicts. **Width cap:** default 2 concurrent, at most 3–4 — ten independent tasks means waves of 2–4 landed between waves, never ten workers; the binding constraint is your own landing budget, per `.agents/leader.md` → *The landing is the bottleneck*.
+
+### Step 2: Execute Task via Rework Loop
+
+The Leader executes each task through a bounded loop. The loop terminates on Reviewer `PASS`, on HALT after 3 failed attempts, or on a Pivot.
+
+```text
+attempt = 1
+feedback = none
+loop:
+  spawn Implementer with task scope + design context + feedback (if any)
+  receive Implementer report (changes + verification evidence)
+  extract git diff
+  spawn Reviewer with diff + spec context
+  receive Reviewer verdict (PASS | FAIL)
+  if PASS:
+    finalize task (Step 3)
+    exit loop
+  else (FAIL):
+    append FAIL findings to execution.md
+    if attempt >= 3:
+      HALT, mark task [~], present audit trail (Step 4)
+      exit loop
+    feedback = Reviewer issues
+    effort = bump one level (medium → high → xhigh)   # a failed fix is usually under-thinking
+    attempt += 1
+    continue loop
+```
+
+#### 2.1 — Read Scope & Design (Leader)
+
+- Re-read the specific design sections referenced by the task.
+- Re-read the requirements and scenarios covered by the task.
+- Identify the smallest safe change that satisfies the task.
+- Identify the verification command listed in the task.
+- **Environment-dependent verification:** if the verification needs a running stack (integration behavior, manual smoke, anything hitting the database or a live server), consult the `## Local Environment` contract in `docs/infrastructure.md` and run its **pre-check** now — before spawning the Implementer. If the primary route is unavailable (e.g. the Docker daemon is off), ask the user whether to start it or proceed via the contract's fallback route; pass the resolved start/health-check commands in the Implementer's brief. If no contract exists, note the gap and recommend `/akili-constitution` (Step 6B) after the run.
+
+#### 2.2 — Spawn Implementer
+
+Delegate to the Implementer with a **pointer brief, not an anthology**. A host worker (see *Cross-host dispatch*) can read any project file itself, and what it reads lands in its context as cacheable input — while content you inline lands as your **output**, the most expensive tokens in the loop. Name paths and sections; copy only what the list below says to copy. A **non-host** worker is the standing exception: it cannot resolve project paths, so it keeps the self-contained brief.
+
+- the persona: **nothing** when spawning the Step 8E wrapper — its body already loads `.agents/implementer.md`. Only the fallback sub-prompt path (no wrapper) seeds the persona content
+- the active task ID, title, and scope from `tasks.md` (copied — it is the work order)
+- **pointers** to the relevant sections of `requirements.md`, `design.md`, and `trd.md` — path + section anchor, with the instruction to read the named scenarios **verbatim at the source**. The verbatim rule protects against paraphrase drift, and a pointer satisfies it exactly as a quote does: the worker still reads the untouched text, it just reads it as input instead of receiving it as your output
+- the constitution by reference (`CLAUDE.md`, `AGENTS.md`, `docs/ux-ui/design.md` — paths only; the Implementer's persona already orders its caching-friendly read sequence)
+- **CodeGraph, when `.codegraph/` exists:** instruct the Implementer to resolve unfamiliar code through graph lookups — `codegraph_context` for the task area, `codegraph_impact` before touching a shared symbol — instead of exploratory full-file reads. A lookup answers "what is this / who uses it" for a fraction of the tokens of the file that contains it; full files are for what it is about to edit. **Staleness rule — include it in the brief:** the graph reflects the last index, not this run's changes, and it cannot flag its own staleness. For files this spec has already touched (earlier task entries, the current diff), **the working tree wins** — read the file, don't trust the graph. Graph answers are reliable for the code this spec has not modified, which is exactly the exploration the lookups are for. If `.codegraph/` is absent, say nothing — the worker explores by file as before, and the graph's absence is already controlled where it belongs (`/akili-constitution` offers init; `/akili-audit` records the state; `/akili-archive` recommends the re-index)
+- **an exemplar file, when one exists** — the path of the existing file most similar to what this task produces, as a pattern anchor: *"mimic `src/modules/orders/orders.service.ts` — structure, naming, error handling, test layout"*. You choose it as Leader (CodeGraph or the module tree makes this a cheap lookup). A worked example steers a model more reliably than any list of conventions, and the pointer costs one line while replacing paragraphs of style prose; on conflict, the constitution and design spec still win over the exemplar. Skip it when nothing comparable exists — a forced, dissimilar exemplar teaches the wrong pattern
+- the skill set **you select for this task as Leader** — the selection judgment (task list and `## Skill Map` as overridable defaults, deviations recorded in `execution.md`) is canonical in `.agents/leader.md` → *Delegation Discipline*, which is already in your context. In the brief, instruct explicitly: *"You MUST use the `skill` tool to load these skills: [names] BEFORE you begin writing code"*
+- the **effort you select for this task** — the dial and its defaults are canonical in `.agents/leader.md` → *Delegation Discipline* and the registry's *Effort dial*. Where the tool exposes a per-spawn effort knob, set it; otherwise steer depth in the brief
+- any prior Reviewer feedback when this is a rework attempt — **copied verbatim, never a pointer** (the Structured Feedback rule wins over brief economy), plus a one-line **Attempt History** so the retry does not repeat the dead end: *"attempt 1 tried X and failed with Y — do not repeat X"*
+- any Active Lessons from `docs/specs/kaizen-log.md` relevant to the task's domain — **copied rows, never a pointer**: a pointer would make the worker read the full log, which costs more than the rows. Pointer-vs-copy is decided by economy, not dogma — point at what the worker would read anyway, copy what spares it a bigger read
+- **any forward pointers recorded in `execution.md` against this task — copied, and re-read at the moment you compose this brief.** Earlier tasks' Reviewers routinely defer a branch to a later task, and the Leader records it; the record creates the appearance of ownership without the mechanism of transfer. A pointer filed three tasks ago is not carried by having been filed — the brief carries it or nobody does
+- the verification command to run before reporting completion (copied)
+
+The Implementer must keep changes minimal and within task scope, follow the design spec exactly unless the spec is clearly incomplete or contradictory, and run the verification before reporting completion.
+
+#### 2.3 — Spawn Reviewer
+
+When the Implementer reports completion, the Leader:
+
+0. **Checks the report for a `Not Done / Assumptions` field first.** If present, the task is not complete regardless of what else the report says: carry that text into `execution.md` verbatim and treat it as scope still owed — re-spawn for the remainder, or mark `[~]` and escalate. A task with an outstanding gap never reaches `[x]`, **even on a Reviewer `PASS`** — the Reviewer audits what was written, not what was omitted.
+1. Extracts the **git diff** of changes since the start of the attempt. To save tokens, the Reviewer MUST ONLY be given the diff, not the entire source files, unless absolutely necessary for context.
+2. Spawns the Reviewer with:
+   - the persona: **nothing** when spawning the Step 8E wrapper (its body loads `.agents/reviewer.md`); persona content only in the fallback sub-prompt path
+   - the **git diff — always inline, the one payload that can never become a pointer**: it is ephemeral working state, not a project file, and the wrapper-restricted Reviewer has no `Bash` to regenerate it
+   - **pointers** to the relevant sections of `requirements.md`, `design.md`, `trd.md`, and `docs/ux-ui/design.md` — the Reviewer keeps `Read`/`Grep`/`Glob` precisely so it can follow them
+   - the Implementer's verification evidence (copied — transient worker output, it lives in no file)
+
+**Review lens modes (4R):** the Reviewer audits spec conformance (the gate) plus four advisory lenses — **readability, reliability, resilience, risk** — per `.agents/reviewer.md`. The mode is selected by the task's effort dial; there is no separate configuration:
+
+| Mode | When | Mechanics |
+|------|------|-----------|
+| **Lens checklist** (default) | Effort `low` / `medium` / `high` | The single Reviewer sweeps all four lenses; non-spec-violation findings return in an `ADVISORY` block. **Spec conformance remains the only PASS/FAIL gate** |
+| **Parallel lens reviewers** | Effort `xhigh` / `max`, or the task touches security, migrations, or data-loss surfaces | Spawn 2–4 lens-scoped Reviewers in parallel (each gets the same diff + one named lens + baseline spec conformance). Any lens may FAIL; the Leader adjudicates whether a lens FAIL is in-scope for the task **before** consuming a rework attempt |
+
+`ADVISORY` findings are recorded in `execution.md` with the task's entry and never trigger rework — the 3-attempt ceiling binds to spec conformance only.
+
+The Reviewer is read-only. It must conclude with either:
+
+- **`STATUS: PASS`** + a 1–2 sentence summary (+ optional `ADVISORY` block with 4R lens findings)
+- **`STATUS: FAIL`** + a structured list of issues, each containing:
+  1. **Discovered Issue** — what is incorrect or missing
+  2. **Violated Rule** — the specific spec document and section violated
+  3. **Remediation Suggestion** — what the Implementer must change
+- **`STATUS: FATAL_FAIL`** — Used ONLY if the Reviewer detects a critical architectural violation, a broken fundamental design token, or a completely unviable approach that cannot be fixed by simple iteration. This triggers an immediate abort of the rework loop (Fail-Fast) to save tokens.
+
+#### 2.4 — Loop Guardrails
+
+- **Maximum Retries:** A hard ceiling of **3 rework attempts** per task. This prevents infinite loops and token waste.
+- **Advisory Never Gates:** `ADVISORY` (4R lens) findings are recorded in `execution.md` but never count as FAIL issues, never trigger rework, and never consume attempts. If an advisory finding is serious enough to block, the Reviewer must restate it as a spec-violation FAIL issue (or the Leader escalates it to the user as a potential spec gap via the Pivot Protocol).
+- **Advisory Never Becomes A Task:** an advisory is **recorded and dies there**. You may not mint a new task in this spec from one, and you may not widen an existing task to absorb it. The rule above stops advisories from *gating*; this one stops them from *growing the spec* — the other direction, and the one that does the real damage. **A task not in the approved `tasks.md` is scope the user never approved**, and it arrives with none of the review the approved tasks got: no requirement backing it, no design decision, no budget line. Advisories are also the *least*-vetted findings in the run, so this path grows scope fastest from the weakest evidence. The only route from advisory to new work is out of this spec: record it, finish what was approved, and let the user decide whether it earns a proposal. When an advisory genuinely cannot wait, that is a **spec gap** — escalate via the Pivot Protocol and let the user reopen the spec, which re-runs the budget and the approval gate rather than bypassing both.
+- **Wind Down Before You Run Out:** a rework loop is up to 3 attempts × (Implementer + Reviewer) — six delegated round trips plus adjudication. **Do not open one you cannot see through.** When context runs low, follow *Winding down* in `.agents/leader.md` (already in your context — that section is canonical): finish or park the task in flight (`[~]` + full attempt history, never silently), spend what remains on `execution.md`, and transfer ownership rather than leaving a supervised delegation outstanding — with the user's explicit ask able to lift that default.
+- **Budget Tripwire:** `design.md` carries a budget from `/akili-specify` Step 2.4 (expected tasks, LOC, review rounds). When actual execution exceeds it, **stop and escalate to the user** with the delta and the cause — do not continue on the assumption that finishing is what was wanted. Exceeding a budget is information, not failure; the cost of a mis-sized spec is only recoverable while it is still running. A spec with no recorded budget (written before this existed, or `Lite` depth) simply skips this check.
+- **Fail-Fast (FATAL_FAIL):** If the Reviewer issues a `STATUS: FATAL_FAIL`, immediately HALT the loop, mark the task `[~]`, and trigger the Pivot Protocol. Do not consume remaining rework attempts.
+- **Structured Feedback:** On `FAIL`, pass the full Reviewer report unchanged to the next Implementer spawn. Do not paraphrase.
+- **Escalation on HALT:** After 3 failed attempts (or a FATAL_FAIL), mark the task `[~]`, log the full loop history in `execution.md`, and present the audit trail to the user for guidance.
+- **Pivot Detection:** If either the Implementer or the Reviewer surfaces evidence that the spec itself is wrong or unviable (not merely the implementation), stop looping immediately and trigger the Pivot Protocol below — do not consume rework attempts on a broken spec.
+
+### Step 3: Finalize on PASS
+
+Only after a Reviewer `PASS`:
+
+1. Append a structured entry to `execution.md` (see log format below) covering every attempt in this task's loop.
+2. Update `tasks.md` from `[ ]` (or `[~]`) to `[x]`.
+
+**Write the evidence before the checkbox — this order is load-bearing.** The two writes are not atomic, and a run can end between them: context exhaustion, an interrupt, a crash. Each order therefore has a failure state, and they are not equally bad.
+
+| Order | If the run dies between the writes | Recoverable? |
+|---|---|---|
+| `execution.md` → `tasks.md` | Evidence recorded, task still `[ ]`/`[~]` | ✅ `/akili-resume` re-runs a task that was actually done — wasteful, but the audit trail shows the PASS and the Leader can reconcile |
+| `tasks.md` → `execution.md` | Task reads `[x]`, **no record of why** | ❌ Indistinguishable from an unverified completion. The Reviewer PASS is gone and cannot be reconstructed |
+
+The second state is the one AKILI cannot tolerate: a `[x]` with no attempt history is a **traceability hole that looks like a finished task**. `/akili-resume` reads `execution.md` to rebuild state and would skip it with nothing to flag. Redundant work is cheap; an unfalsifiable completion is not.
+
+This also makes the ordering machine-checkable — a gate on `tasks.md` writes can require the matching PASS to already be in `execution.md`, which is impossible under the reverse order because the evidence does not exist yet at the moment of the write. **Projects that accepted `/akili-constitution` Step 8F have exactly that gate installed** (`.claude/hooks/akili-tasks-gate.sh`, Claude Code only): a `[x]` write without PASS evidence is blocked by the harness, and the block message names this rule. If you hit it, the fix is never to work around the hook — it is to write the evidence first, which is what this step already orders.
+3. **Git Commit Staging:** Always follow the **AKILI Spec Reference** commit standard. Prefix the commit message with `[SPEC:<spec-path>]` (e.g. `git commit -m "[SPEC:changes/add-remember-me] implement secure cookie storage"`). When writing a PR description for the spec's work, load `cognitive-doc-design` and follow its PR and Review Docs rules: state what to review first, what is intentionally out of scope, and link chained PRs.
+4. **Code Traceability:** Add file-level or block-level comment spec references (`// @akili-spec <spec-path>`) in critical or complex codebase additions to assist future audits.
+5. **Constitution Impact Check:** If the task created a new module/package, moved a module boundary, or changed a module's public surface, append a `## Constitution Impact: <Task ID>` block to `execution.md` recording:
+   - which module was created or reshaped
+   - whether a child `CLAUDE.md`/`AGENTS.md` is needed for it (or an existing child guide became stale)
+   - which parent guide's `## Module Guides` index needs a new or updated reference
+   - that a CodeGraph re-index is pending
+   These notes are consumed by `/akili-archive` (Constitution & Graph Sync). If skipping the sync until archive would leave the root guides actively misleading (e.g. a new top-level package agents keep guessing about), update the affected guides immediately in the same task commit instead of deferring.
+
+### Step 4: HALT on Rework Limit
+
+If 3 attempts fail in a row (or a FATAL_FAIL occurs):
+
+1. **Automatic Rollback:** Run `git restore .` and `git clean -fd` to revert the working tree to a clean state. Do not leave broken code for the user to clean up.
+2. Mark the task `[~]` in `tasks.md`.
+3. Append a final `## HALT: <Task ID>` block to `execution.md` containing:
+   - all three Reviewer `FAIL` reports
+   - all three Implementer summaries
+   - the verification output of the final attempt
+   - the Leader's hypothesis on the root cause (spec ambiguity, missing context, environmental issue, etc.)
+3. Present the blocker to the user with a clear question — for example: *"The Reviewer rejected three attempts on the same `design token compliance` finding. The spec at `design.md#tokens` does not list a token for this surface. How would you like to proceed?"*
+4. Do **not** advance to the next task automatically after a HALT.
+
+### Step 5: Continue or Pause
+
+After a task PASSes or HALTs, generate a short, easy-to-understand summary (summary facil de entender de lo que se hizo) of the task result, verification outcome, the Reviewer summary, and the next eligible task. Ask whether to continue, pause, or skip the next task.
+
+**Approval Mode (inherited from the proposal's Document Control):** under `pre-approved`, this continue/pause gate auto-passes after a **PASS** — log `auto-approved (pre-approved mode)` with the task's `execution.md` entry and proceed to the next eligible task. The mode never carries past an exception: a **HALT**, a Pivot, a budget tripwire, or a `FATAL_FAIL` always stops for the user — pre-approval covers routine progress, not the cases whose content nobody could know in advance.
+
+**Unattended Mode (Claude Code + `pre-approved` only):** when the user asks for a run that finishes without them watching, recommend launching it with `/goal` in Claude Code — after each turn a small fast model checks the condition and starts another turn until it holds ([docs](https://code.claude.com/docs/en/goal.md)). Use this canonical condition, with `<spec-path>` and `<N>` resolved:
+
+> Every task in `docs/specs/<spec-path>/tasks.md` is `[x]` with matching PASS evidence in `execution.md`, OR `execution.md` contains a `## HALT:`/`## Pivot Record:`/budget-tripwire block, OR a question is pending for the user. Stop after `<N>` turns.
+
+The three-way disjunction is part of the condition, never an add-on: it is what stops the loop from pushing past a human gate. Set `<N>` to tasks remaining × up to 6 triad round-trips + margin, so the turn bound and the 3-attempt rework ceiling never fight — the ceiling HALTs first, the HALT satisfies the disjunction, the loop ends. The evaluator judges only what the session has surfaced in the conversation; it runs no commands and reads no files, so the task state this step already reports at each gate is what it reads.
+
+Optional by construction: `/goal` requires a workspace you have trusted and is unavailable under `disableAllHooks`, and it does not change tool permissions (pair it with auto mode so each turn runs without per-tool prompts). Never make a run depend on it — every spec stays completable without it. Do not use it under `gated` mode: there the interactive gates are the point.
+
+**Context checkpoint (this gate is the safe boundary inside a spec):** a task just closed and its full state is in `execution.md` + `tasks.md` — between tasks is the one moment mid-spec where the conversation holds nothing irreplaceable. If your context is getting heavy, say so in one line with the honest options: **`/compact` now** (keeps the session, trims history — safe here, destructive mid-loop), or **park and reset** (`/clear`, then `/akili-resume` rebuilds from the audit trail). You cannot run either — recommend at this gate rather than letting the wind-down protocol fire mid-loop later, which is the expensive version of the same decision. This checkpoint fires even under `pre-approved` mode: it costs one line, not a pause.
+
+---
+
+## Execution Log Format (`execution.md`)
+
+The execution log is created on first run and appended to on subsequent runs. It is the canonical audit trail of the multi-agent loop.
+
+Minimum sections:
+
+1. Document Control
+2. Task Execution History
+3. Summary when all tasks are complete
+
+Each task entry must record:
+
+- final status (PASS / HALT / pivot)
+- date
+- task ID and title
+- number of Implementer attempts run
+- for each attempt: files changed, Implementer verification command + result, Reviewer verdict + summary or full FAIL findings
+- any `ADVISORY` (4R lens) findings from the final Reviewer verdict, labeled as advisory
+- requirements covered
+- decisions made
+- issues encountered
+- final verification result
+
+A minimal PASS-on-first-attempt entry can be compact; a HALT or rework entry must include the full attempt-by-attempt history.
+
+---
+
+## Error Handling & Pivot Protocol
+
+- If required AKILI-SPECS files are missing, stop and report what is missing.
+- If `.agents/` is missing, stop and direct the user to run `/akili-constitution`.
+- If the design is ambiguous, the Leader asks the user before spawning the Implementer — do not pass an ambiguous task into the loop.
+- If verification fails inside the Implementer, the Implementer must fix it before reporting completion; if it cannot, it reports back the failure and the Leader treats that as an implicit FAIL.
+- If a task is blocked, report the blocker and move to the next eligible task only if appropriate.
+- **Pivot Protocol:** If Implementer or Reviewer discoveries reveal that the approved requirements or design are wrong or technically unviable:
+  1. Stop the rework loop. Mark the current task as `[~]` (blocked) — even if rework attempts remain.
+  2. Document the blocker, alternatives, and revised technical direction in `execution.md` inside a new `## Pivot Record: <Task ID>` section. If the pivot overturns an architecture decision recorded in the TRD, name the affected `ADR-NNN` in the Pivot Record — decisions are never edited in place; `/akili-archive`'s constitution sync writes the superseding ADR.
+  3. Modify the spec's `requirements.md`, `design.md`, and/or `tasks.md` to map out the updated plan — then **close the correction with a two-direction sweep** (see `/akili-specify` → *Correction Closure*): grep the superseded value across the whole spec folder (forward — the old value survives at sites the pivot analysis did not cite), and grep references *to* the corrected sections (backward — a document that cited the old text may now assert a falsehood). A pivot amended by its cited-site list alone has failed both ways in the field and cost an extra review round.
+  4. Stop, explain the situation to the user, and obtain explicit review/approval on the pivot before resuming execution.
+
+---
+
+## Authorship
+
+AKILI-SPECS methodology by **Juan Carlos Cadavid** — [jcadavid.com](https://jcadavid.com). Licensed under the MIT License.

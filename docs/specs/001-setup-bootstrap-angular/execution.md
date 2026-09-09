@@ -150,6 +150,103 @@ Las seis casillas de *Hecho cuando* cerradas y comprobadas de forma independient
 
 ---
 
+### T-2 — Cadena hexagonal del reloj a través de las cuatro capas
+
+| Campo | Valor |
+|---|---|
+| **Estado** | ✅ **PASS** — en el **segundo** intento |
+| Fecha | 2026-09-09 |
+| Intentos del Implementer | **2** |
+| Task de Orca | `task_457e985dae0b` |
+| Dispatches | intento 1 `ctx_22f716ca1aa4` · intento 2 `ctx_5e1b8692512b` |
+| Requisitos cubiertos | RF-2.1 · RF-2.2 · RF-2.3 · RF-7.1 · RF-7.2 |
+| Skills cargadas | `angular-developer`, `tdd` — por **ruta absoluta** en el encargo (ver nota de mecanismo abajo) |
+
+#### Intento 1 — Implementer
+
+Diez archivos: el puerto `Reloj`, el value object `SelloDeTiempo` con su prueba, el caso de uso `SellarEvento` con su prueba, los adaptadores `RelojSistema` y `RelojFijo`, `tokens.ts`, `providers.ts` y el registro en `app.config.ts`.
+
+Verificación `npx ng test --watch=false --include=src/app/domain --include=src/app/application` → **5/5 en verde**, 2 archivos.
+
+Ciclo TDD con **fase RED observada** (fallo de resolución de módulo antes de implementar). Entrada negativa del contrato efectivamente ejercida: alterada la validación para admitir negativos, la prueba falló con `expected function to throw an error, but it didn't`; restaurada, verde otra vez.
+
+`Not Done / Assumptions: NINGUNO`.
+
+#### Intento 1 — Reviewer · `STATUS: FAIL`
+
+Un único hallazgo, y material:
+
+> `sellar-evento.spec.ts:2` importa `RelojFijo` desde `../../infrastructure/tiempo/reloj-fijo`. Import de **valor** (se usa con `new`), de `application/` hacia `infrastructure/`.
+
+**Reglas violadas:** la casilla *Hecho cuando* de T-2 (*"`application/` no importa `@angular/*` ni `infrastructure/`"*, cláusula negativa sin calificar por tipo de archivo) · `design.md` §7.1, fila `application/` → *Prohíbe `infrastructure/`*, con entrada declarada *"todos los `.ts` bajo `src/app/`"* y solo dos exclusiones (`import type` y rutas relativas intra-capa) · TRD TEST-2 · la tabla de capas de `CLAUDE.md`.
+
+**Consecuencia que lo hacía urgente:** la pasada 1 de T-3 exige que `src/app/` salga limpia. Ese import la habría hecho fallar **por construcción**, y RF-3.2 es, según `requirements.md`, *"el requisito más importante de este spec"*.
+
+**El spec se contradijo a sí mismo.** El *Alcance* de T-2 ordena literalmente *"`SellarEvento` con `RelojFijo`"*, y `design.md` §5 designa `RelojFijo` como *"adaptador determinista (pruebas y simulación)"* residente en `infrastructure/`. El Reviewer buscó la exención en `design.md` §7.1, RF-3.3, TRD TEST-2 y TRD §4 y **ninguno la da**. Adjudicación del Leader: pesa más la casilla negativa, explícita y respaldada por cuatro documentos, que una frase descriptiva del Alcance respaldada por uno.
+
+#### Intento 2 — Implementer
+
+**Un solo archivo:** `src/app/application/diagnostico/sellar-evento.spec.ts`. Se sustituyó el import del adaptador por un doble local `RelojDePrueba` que declara `implements Reloj` contra el puerto de dominio.
+
+La remediación **refuerza** RF-7.2 en vez de debilitarlo: el requisito pide *"un doble en memoria sin `TestBed`, sin red y sin DOM"*, y un doble local demuestra que el caso de uso se prueba con nada más que tipos de dominio. Se descartó la alternativa —conservar el import y enmendar el spec— porque habría exigido excluir `**/*.spec.ts` de `design.md` §7.1, calificar la casilla de T-2, añadir un requisito de exclusión a T-3, y **dejar la frontera sin verificar en los archivos de prueba**.
+
+#### Intento 2 — Reviewer · `STATUS: PASS`
+
+> El hallazgo único quedó resuelto — no queda ningún import de `application/` o `domain/` hacia `infrastructure/`, ni en producción ni en pruebas, y el doble `RelojDePrueba` implementa el puerto de dominio `Reloj` sin debilitar la cobertura ni introducir `TestBed`/DOM/red. Ningún otro archivo del intento 1 cambió.
+
+Barridos propios del auditor sobre el árbol, no confiados al reporte: `infrastructure` en `domain/` y `application/` → **sin coincidencias**, `.spec.ts` incluidos · `@angular`/`rxjs`/`chart.js` en esas capas → sin coincidencias · `Date.now`/`Math.random` en `domain/` → sin coincidencias.
+
+Verificado en verde en la ronda 1 y no reabierto: alcanzabilidad real de RF-2.2 —la cadena `main.ts` → `app.config.ts` → `providers.ts` → `SellarEvento` → `SelloDeTiempo` y `Reloj` se cierra con imports de valor, así que `domain/` se alcanza **de hecho, no de dibujo**— · `SellarEvento` como clase plana sin `inject()` · `RELOJ` y `SELLAR_EVENTO` con `useFactory` y `deps: [RELOJ]` según §6.3 · invariantes de `SelloDeTiempo` probadas en 3 casos incluidos `NaN`, `Infinity` y `-Infinity` · alcance limpio, un solo puerto.
+
+#### Casilla que T-2 no puede cerrar, y por qué no es un fallo suyo
+
+La **primera** casilla de *Hecho cuando* dice *"Las **cuatro** capas existen"*. `src/app/ui/` no existe y **no puede existir dentro de T-2**: el campo *Capa* de la propia tarea lista solo `domain/`, `application/` e `infrastructure/`, y `ui/` pertenece a T-4, T-6 y T-7.
+
+La casilla está **mal especificada** — pide a una tarea demostrar algo fuera de su propio alcance declarado. Es la misma clase de defecto que el comando de verificación corregido en T-1. Queda como **obligación transferida a T-6**, que es la tarea que crea `ui/`.
+
+Y arrastra una consecuencia mayor para el DAG, registrada abajo entre las decisiones pendientes: la **pasada 3 de T-3** (alcanzabilidad de una capa por capa desde `main.ts`, RF-2.2) tampoco puede pasar antes de T-6.
+
+#### Corrección de texto aplicada en el mismo cierre
+
+Tras aprobar la remediación, dos sitios del spec quedaron afirmando justo lo prohibido:
+
+| Sitio | Antes | Después |
+|---|---|---|
+| `tasks.md` T-2, *Alcance* | *"`SellarEvento` con `RelojFijo` **sin `TestBed`**"* | *"`SellarEvento` con un **doble en memoria del puerto `Reloj`**, declarado en el propio archivo de prueba, **sin `TestBed`**"* |
+| `design.md` §11, fila RF-7.2 | *"Prueba de `SellarEvento` con `RelojFijo`, **sin `TestBed`**"* | *"Prueba de `SellarEvento` con un **doble local del puerto**, **sin `TestBed`**"* |
+
+Sin esta corrección, `/akili-validate` volvería a levantar el mismo conflicto contra el código ya aprobado. **`RelojFijo` sigue siendo entregable exigido por `design.md` §5** y se conserva; simplemente hoy no tiene consumidores, hecho que se registra para que nadie lo lea como código muerto.
+
+#### ADVISORY del Reviewer *(no gatillan retrabajo)*
+
+| Lente | Hallazgo | Dónde se resuelve |
+|---|---|---|
+| **Riesgo → T-3** | Ambos `.spec.ts` importan `'vitest'`. La columna *Prohíbe* de §7.1 no lo incluye —así que es legal— pero la columna *Permite* está redactada como **lista blanca** (*"solo `domain/`"*). Si `arch-test.mjs` se implementa como lista blanca, la pasada 1 marcará los dos archivos de prueba y **T-3 fallará por construcción** | **Decisión pendiente D-1**, abajo. T-3 debe tratar los especificadores de paquete npm ausentes de *Prohíbe* como permitidos |
+| Fiabilidad | La invariante de §5 *"`RelojFijo` nunca retrocede"* está **implementada** (`fijar()` lanza si el nuevo instante es menor) pero **no probada**: no existe `reloj-fijo.spec.ts` y ninguna tarea posterior la cubre. Queda declarada sin compuerta permanente | Sin dueño. Candidata a `/akili-test` |
+| Legibilidad *(ejemplar de `002/01`)* | Tres formas que no conviene que copien `Voltios`, `Celsius` y `Watts`: **(a)** API ISO duplicada — `aIso()` **y** el getter `iso` que solo delega, cuando §5 dice "su representación ISO" en singular; **(b)** `esIgual()` es API pública **sin ninguna prueba**, y en un value object la igualdad es el método que define la categoría; **(c)** `SelloDeTiempoInvalidoError` vive dentro del archivo del value object, mientras el **TRD §4** designa `domain/shared/errors/` como su hogar y nombra `RangoInvalidoError` para esta familia. Si `002/01` copia la forma, `RangoInvalidoError` no nace nunca | Decidir **antes** de que `002/01` lo replique |
+| Riesgo *(menor)* | `providers.ts` registra `RELOJ` con `useClass: RelojSistema` sobre una clase sin `@Injectable()`. Funciona porque su constructor no tiene parámetros; el día que gane una dependencia falla en runtime con NG0204. `useFactory: () => new RelojSistema()` sería inmune y simétrico con `SELLAR_EVENTO`. §6.3 solo exige `useFactory` para `SELLAR_EVENTO`, así que no es violación | Sin dueño |
+
+#### Nota de mecanismo — cómo se cargan las skills en Antigravity
+
+Confirmado por el propio worker: **no existe herramienta nativa `skill(name)`**. Una skill se carga **leyendo su `SKILL.md` por ruta absoluta**. En T-1 el encargo decía *"carga las skills X"* y funcionó porque el modelo dedujo el mecanismo — suerte, no contrato. Desde T-2 el encargo resuelve las rutas:
+
+```
+/Users/pelitos/.gemini/config/plugins/akili-skills/skills/<skill>/SKILL.md
+```
+
+y exige al worker confirmar cuáles leyó.
+
+#### Nota de operación — reabrir una tarea para retrabajo
+
+Un `worker_done` con `--outcome succeeded` **cierra la tarea en Orca automáticamente**. Un segundo `dispatch` sobre ella falla con `Task ... is completed; only ready tasks can be dispatched`. El retrabajo exige reabrirla primero:
+
+```
+orca orchestration task-update --id <task_id> --status ready --json
+orca orchestration dispatch --task <task_id> --to <handle> --json
+```
+
+---
+
 ## Pivot Record — corrección del comando de verificación
 
 | Campo | Valor |
