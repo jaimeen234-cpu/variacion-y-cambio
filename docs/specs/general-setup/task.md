@@ -54,10 +54,12 @@
 | **Depende de** | Define el orden; `ninguna` es una respuesta válida y frecuente |
 | **Paralelizable** | Declara si dos tareas pueden ejecutarse a la vez. **Archivos distintos no basta**: también deben no compartir salida de build, servidor de desarrollo, puerto ni dependencias generadas |
 | **Requisitos** | Trazabilidad hacia `requirements.md`. Una tarea sin requisito es alcance inventado |
-| **Verificación** | El comando exacto que el Implementer ejecuta antes de reportar. **Nunca "correr las pruebas"** |
+| **Verificación** | El comando exacto que el Implementer ejecuta antes de reportar. **Nunca "correr las pruebas"**. Si apunta a un artefacto que la tarea **aún no ha construido**, se marca `provisional` y se **re-deriva contra el artefacto real** antes de despachar la tarea — en un spec de bootstrap, asumirlo escrito es el modo de fallo por defecto *(KZ-001-setup-bootstrap-angular-1)* |
 | **Hecho cuando** | Lista verificable, no prosa. Es lo que el Reviewer audita |
 
 Campos opcionales: **Skills** (el Leader puede sobreescribirlos), **Ejemplar** (el archivo existente más parecido, cuando lo haya — un ejemplo concreto guía mejor que una lista de convenciones).
+
+**En una tarea de sincronización documental**, toda afirmación sobre otro archivo **cita su valor literal**, nunca lo parafrasea; y el barrido en dos direcciones se busca **por concepto, no por frase literal** — la misma falsedad sobrevive con otra redacción *(KZ-001-setup-bootstrap-angular-3)*.
 
 ---
 

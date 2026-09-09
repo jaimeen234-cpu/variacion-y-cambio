@@ -228,6 +228,7 @@ En una **rama de spec**, ninguna escritura de efecto secundario del ciclo de vid
 | CC-2 | **Ningún comando de medición** (build, benchmark, Lighthouse, E2E) mientras haya un agente delegado activo. La medición sale contaminada y nadie lo nota |
 | CC-3 | Dos tareas en paralelo exigen archivos distintos **y** ninguna salida de build, servidor de desarrollo, puerto o dependencia generada en común. Archivos distintos no basta: la contención aparece como errores absurdos en el agente equivocado |
 | CC-4 | Se aísla por **conflicto**, no por paralelismo. Si el único argumento es "corren a la vez", se queda en un solo checkout |
+| CC-5 | Mientras haya un **agente delegado activo**, los `git add` van **por ruta explícita**, nunca `-A`. El área de preparación es estado compartido invisible: un sabotaje de verificación a medio revertir entra al commit sin que ninguna prueba lo note *(KZ-001-setup-bootstrap-angular-2)* |
 
 ### Idioma
 
