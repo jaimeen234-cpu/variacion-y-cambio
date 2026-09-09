@@ -8,11 +8,11 @@
 #     index.html. Sin eso, recargar /laboratorio devuelve 404 — la única sorpresa de
 #     infraestructura que este sistema puede dar.
 #
-# Nota de estado (2026-09-09): la prueba de arquitectura (`npm run test:arch`) y los
-# scripts agent-lean (`test:agent`, `lint:agent`) todavía no existen — los crean las
-# tareas T-3 y T-9 del spec 001-setup-bootstrap-angular. Cuando existan, se añaden a
-# la compuerta de abajo. Hoy la compuerta corre lo que hay, y lo dice en voz alta en
-# lugar de fingir una verificación completa.
+# La compuerta corre el contrato de verificación completo del proyecto: las pruebas,
+# la prueba de arquitectura y el lint, todos con los scripts agent-lean que define
+# `package.json` (creados en T-3 y T-9 del spec 001-setup-bootstrap-angular).
+# `test:agent` es silencioso en verde y verbatim en rojo, que es justo lo que hace
+# legible un log de CI.
 
 name: Desplegar en GitHub Pages
 
@@ -53,7 +53,13 @@ jobs:
         run: npm audit --audit-level=high
 
       - name: Pruebas
-        run: npx ng test --watch=false
+        run: npm run test:agent
+
+      - name: Prueba de arquitectura
+        run: npm run test:arch
+
+      - name: Lint
+        run: npm run lint:agent
 
       - name: Configurar Pages
         id: pages
@@ -69,7 +75,7 @@ jobs:
         # (jaimeen234-cpu.github.io/variacion-y-cambio/), no una user page.
         # Se toma de la variable del propio runner para que un fork o un renombrado
         # del repositorio no rompa el despliegue en silencio.
-        run: npx ng build --configuration production --base-href "/${GITHUB_REPOSITORY#*/}/"
+        run: npx ng build --configuration production --base-href "/${GITHUB_REPOSITORY#*/}/" && node tools/bundle-budget.mjs
 
       - name: Fallback de rutas y desactivar Jekyll
         run: |
