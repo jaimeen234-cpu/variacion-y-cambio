@@ -1,20 +1,24 @@
-<header class="vc-header">
-  <nav class="vc-navbar" aria-label="Navegación principal">
-    <div class="vc-wrap">
-      <a routerLink="/" class="vc-brand">
-        Variación <span class="vc-grad-text">y Cambio</span>
-      </a>
-      <div class="vc-navlinks">
-        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
-        <a routerLink="/laboratorio" routerLinkActive="active">Laboratorio</a>
-        <a routerLink="/conceptos" routerLinkActive="active">Conceptos</a>
-        <a routerLink="/formulas" routerLinkActive="active">Fórmulas</a>
-        <a routerLink="/cartilla" routerLinkActive="active">Cartilla</a>
+@if (manejadorError.errorActivo(); as evento) {
+  <vc-error-screen [evento]="evento" (recargar)="manejadorError.limpiar()" />
+} @else {
+  <header class="vc-header">
+    <nav class="vc-navbar" aria-label="Navegación principal">
+      <div class="vc-wrap">
+        <a routerLink="/" class="vc-brand">
+          Variación <span class="vc-grad-text">y Cambio</span>
+        </a>
+        <div class="vc-navlinks">
+          <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
+          <a routerLink="/laboratorio" routerLinkActive="active">Laboratorio</a>
+          <a routerLink="/conceptos" routerLinkActive="active">Conceptos</a>
+          <a routerLink="/formulas" routerLinkActive="active">Fórmulas</a>
+          <a routerLink="/cartilla" routerLinkActive="active">Cartilla</a>
+        </div>
       </div>
-    </div>
-  </nav>
-</header>
+    </nav>
+  </header>
 
-<main class="vc-main">
-  <router-outlet />
-</main>
+  <main class="vc-main">
+    <router-outlet />
+  </main>
+}

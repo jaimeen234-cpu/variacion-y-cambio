@@ -716,3 +716,31 @@ Se registran aquí porque el Reviewer advirtió que hoy viven **solo en un comen
 **RF-6.2 — placeholder inequívoco.** Badge en mayúsculas *"Módulo en Construcción"* en `--vc-warning`, borde `1px dashed`, `<h1>{{ nombre() }}</h1>` y caja *"Especificación responsable:"* con `<code>{{ spec() }}</code>`. Ambas entradas son `input.required<string>()`: **una página no puede quedarse sin nombre ni sin spec**. Atribuciones correctas por página (laboratorio → `002/02`; inicio, conceptos, formulas, cartilla → `002/03`; no-encontrado → este spec).
 
 **Comprobación extra del Reviewer:** todos los custom properties usados en `app.scss`, `placeholder.ts` y `no-encontrado.ts` existen en `_tokens.scss` — ninguna `var()` cuelga sin definición.
+
+---
+
+## T-7 — `ErrorHandler` global y pantalla de error
+
+| | |
+|---|---|
+| **Estado** | ✅ **PASS** — al primer intento · auditoría en **90 s** |
+| **Fecha** | 2026-09-09 |
+| **Implementer** | Antigravity · dispatch `ctx_53e22c3b58ab` |
+| **Archivos** | 7 · +297/−26 · `ui/core/{error-handler,error-screen,error-handler.spec}.ts` · `app.{config.ts,ts,html,spec.ts}` |
+| **Requisitos** | RF-9.1, RF-9.2 |
+
+**Verificación del Leader antes de delegar:** suite **22/22** · `arch-test` exit 0 · `grep` de hex sueltos vacío · la prueba afirma sobre el DOM en 12 sitios.
+
+### Corrección del Leader sobre su propio brief
+
+El brief afirmaba *"`ui/` NO puede importar de `infrastructure/`"*. **Es falso:** la tabla de capas de `CLAUDE.md` y de `design.md` §7.1 da a `ui/` permiso sobre **todas** las capas. El Implementer importó el token `SELLAR_EVENTO` de `infrastructure/di/tokens`, que es legal y es la forma correcta de inyectar por token; `arch-test` lo confirma. Se registra para que la instrucción errónea no se propague a T-8 ni a `002`.
+
+### Veredicto del Reviewer — `STATUS: PASS`
+
+**Descalificador superado.** `error-handler.spec.ts` no se conforma con el spy: tras `handler.handleError(...)` afirma `querySelector('.vc-error-card')` no nulo y `textContent` con *"Ha ocurrido un error inesperado"*, **y establece la línea base contraria antes** de la excepción (`querySelector('vc-error-screen')` nulo, `.vc-brand` presente). El spy sobre `console.error` es afirmación **adicional**, no la única. RF-9.2 queda cubierto por lo que ve el usuario.
+
+**La casilla difícil — cadena ejercida en runtime, con valor concreto.** La prueba inyecta `{ provide: RELOJ, useValue: new RelojFijo(1710000000000) }` **después** de `...appConfig.providers`, de modo que gana sobre `RelojSistema`; `SELLAR_EVENTO` se construye con `useFactory: (reloj) => new SellarEvento(reloj), deps: [RELOJ]`, así que el `RelojFijo` recorre `application → domain`. La afirmación es sobre el **valor determinista**, no sobre la presencia de un sello: `expect(domConError.textContent).toContain('2024-03-09T16:00:00.000Z')`, que el Reviewer verificó corresponde exactamente a ese epoch. **No hay `Date.now()`** ni en `error-handler.ts` ni en `error-screen.ts`: el instante entra por `evento().sello.iso`, con `SelloDeTiempo` puro. Un sello generado en el componente daría otro ISO y rompería la prueba — la cadena está genuinamente ejercida.
+
+**Sin trazas técnicas visibles.** La plantilla renderiza solo copy estático más `{{ evento().sello.iso }}`. **`evento().descripcion` —el único campo que arrastra el mensaje crudo— nunca se interpola**, y `error.stack` no se toca en ninguna capa de UI. La traza completa va solo a `console.error('[Error No Controlado - Diagnóstico]', { error, sello, descripcion })`. La prueba lo blinda con tres negativas: `not.toContain('TypeError')`, `not.toContain('Fallo de cálculo…')`, `not.toContain('stack')`.
+
+**Resto del contrato:** `ErrorHandler` registrado con `useExisting: ManejadorErrorGlobal`, y la prueba `toBeInstanceOf` hace que la entrada saboteadora (quitar el proveedor) falle de verdad. `app.html` sustituye header y `<main>` completos por `<vc-error-screen>`: no queda pantalla en blanco. Los 22 tokens CSS usados existen en `_tokens.scss`; el wrapper pinta `--vc-bg-base` explícito, sin heredar transparencia (RF-9.1). `ErrorScreen` standalone + `OnPush`, con `role="alert"` y `aria-live="assertive"`. `signal` vive en `ui/core/`, donde es legal.

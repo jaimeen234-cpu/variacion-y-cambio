@@ -239,7 +239,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
 
 ---
 
-### [ ] T-7 — `ErrorHandler` global y pantalla de error
+### [x] T-7 — `ErrorHandler` global y pantalla de error
 
 - **Capa:** `ui/core/`
 - **Depende de:** T-2, T-4
