@@ -15,11 +15,13 @@
 
 | Métrica | Estimación |
 |---|---|
-| Tareas | **10** |
-| LOC escritas a mano | **~940** (excluye el andamiaje que genera el CLI) |
-| Rondas de revisión | **~12** (10 tareas + ~2 reworks esperados) |
+| Tareas | **11** *(10 originales + T-11, enmienda D-2)* |
+| LOC escritas a mano | **~980** (excluye el andamiaje que genera el CLI) |
+| Rondas de revisión | **~13** (11 tareas + ~2 reworks esperados) |
 
 Si la ejecución excede esto, el Leader **se detiene y escala al usuario** en lugar de continuar. Exceder el presupuesto es información, no fracaso.
+
+> **Revisión del presupuesto, 2026-09-09.** El original decía 10 tareas · ~940 LOC · ~12 rondas. La enmienda D-2 parte T-3 y añade **T-11** (~40 LOC: la pasada de alcanzabilidad). El usuario aprobó la ampliación con la decisión; queda registrada aquí para que el tripwire mida contra la cifra vigente y no dispare por un aumento ya autorizado.
 
 ---
 
@@ -186,6 +188,12 @@ No hay API HTTP (TRD ADR-002). Los contratos de este spec son tres:
 | `infrastructure/` | `domain/`, `application/`, `infrastructure/`, `@angular/*`, `rxjs` | `ui/` |
 | `ui/` | todo | — |
 
+**Cómo se lee esta tabla — la columna que manda es `Prohíbe` (enmienda D-1, aprobada 2026-09-09).** Las dos columnas se contradecían para la misma fila: bajo *Permite* (lista blanca), `import { describe } from 'vitest'` en un `.spec.ts` de `domain/` es una infracción; bajo *Prohíbe* (lista negra), es legal. El script implementa **lista negra**: un especificador de paquete npm que no aparece en la columna *Prohíbe* de su fila está **permitido**. La columna *Permite* queda como resumen de intención, no como regla ejecutable.
+
+El motivo no es comodidad: **TRD TEST-2 enumera una lista cerrada de prohibiciones**, no una lista blanca, y la tabla de este spec dice ser "la misma del TRD §4". Una lista blanca haría fallar la pasada 1 por construcción en cuanto exista la primera prueba unitaria de dominio — es decir, inmediatamente. El precio de la lista negra está declarado: un paquete nuevo y nocivo entra sin avisar hasta que alguien lo añade a la fila. Se acepta porque el conjunto de prohibiciones que importan (Angular, RxJS, Chart.js, Three) es estable y está en el TRD.
+
+Fixture obligatorio de esta decisión: `domain-usa-vitest.ts` — importa `vitest`, y la pasada 2 **no** debe marcarlo. Sin ese fixture la decisión es prosa; con él, es una prueba.
+
 **Exclusiones deliberadas** (RF-3.3): las declaraciones `import type` no cuentan, porque desaparecen en compilación y no crean acoplamiento en tiempo de ejecución. Los imports relativos se resuelven a su capa antes de evaluarse, de modo que `../../ui/algo` sí se detecta aunque sea relativo.
 
 **Auto-verificación en cada corrida.** El comando hace dos pasadas:
@@ -194,6 +202,10 @@ No hay API HTTP (TRD ADR-002). Los contratos de este spec son tres:
 2. `tools/fixtures/arch/` **debe** producir exactamente las infracciones esperadas, declaradas en el propio script.
 
 Si la segunda pasada no encuentra las infracciones que el fixture contiene a propósito, el comando falla **aunque el código de la aplicación esté impecable**. Eso es lo que impide que la compuerta se degrade en silencio a un no-op: un script que dejara de analizar archivos aprobaría la pasada 1 y **suspendería** la pasada 2.
+
+**Una tercera pasada llega más tarde, y no por descuido (enmienda D-2, aprobada 2026-09-09).** La comprobación de alcanzabilidad de RF-2.2 — seguir los imports relativos desde `main.ts` y verificar que se alcanza al menos un archivo de **cada** capa — vive en este mismo script, pero **no puede escribirse hasta que exista `src/app/ui/`**, y `ui/` no nace hasta T-6. Escrita antes, falla por construcción y por una razón que no es un defecto de nadie.
+
+Por eso la pasada 3 es su propia tarea (**T-11**), colocada tras T-6. La alternativa —retrasar todo T-3 hasta después de T-6— dejaría cuatro tareas escribiendo código sin la compuerta de arquitectura, que es el entregable central del spec. Una tarea de más es más barata que cuatro tareas sin red.
 
 **Entrada que la haría fallar** (exigida por la §8 de requisitos): añadir `import { signal } from '@angular/core'` a cualquier archivo de `domain/`.
 
@@ -388,4 +400,4 @@ El caso más cercano a un disparador es DD-2, que **corrige** una afirmación de
 
 ### Confirmación de profundidad *(Paso 2.4)*
 
-10 tareas, ~940 LOC, ~12 rondas. **Coincide con Standard.** No baja a Lite (diez tareas y tres herramientas de verificación no son un cambio cosmético) ni sube a Full (no hay migración, ni API, ni auth, ni despliegue previo que pueda romperse).
+10 tareas, ~940 LOC, ~12 rondas — **11 · ~980 · ~13 tras la enmienda D-2 del 2026-09-09**, que no cambia el veredicto. **Coincide con Standard.** No baja a Lite (diez tareas y tres herramientas de verificación no son un cambio cosmético) ni sube a Full (no hay migración, ni API, ni auth, ni despliegue previo que pueda romperse).

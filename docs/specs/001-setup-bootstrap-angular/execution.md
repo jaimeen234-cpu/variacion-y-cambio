@@ -11,7 +11,7 @@
 | Implementer | **Google Antigravity** (`agy` 1.1.27) · `gemini-3.8-flash-high` · terminal Orca `term_66336f9f` |
 | Reviewer | Claude Code · `opus` · solo lectura |
 | Run de Orca | `run_5527c98d67f6` |
-| Presupuesto | 10 tareas · ~940 LOC a mano · ~12 rondas de revisión |
+| Presupuesto | **11 tareas · ~980 LOC a mano · ~13 rondas** *(revisado 2026-09-09, enmienda D-2; original 10 · ~940 · ~12)* |
 
 ### Desviaciones de proceso vigentes en esta corrida
 
@@ -373,3 +373,36 @@ Recomendación del Leader: **(b)**. La compuerta de arquitectura es el entregabl
 - Forma del ejemplar de `002/01`: API ISO duplicada, `esIgual()` sin prueba, y `SelloDeTiempoInvalidoError` fuera de `domain/shared/errors/` donde el **TRD §4** lo ubica junto a `RangoInvalidoError`. Decidir **antes** de que `002/01` replique la forma.
 - `engines.node = "^22.18.0"` es más estrecho que `docs/infrastructure.md` §6 y RNF-5 (Node ≥ 20) — material de **T-10 / RF-10.3**.
 - `<html lang="en">` y `<title>VariacionYCambio</title>` contra la regla de idioma — **T-6**; `README.md` en inglés — **T-10**.
+
+---
+
+## Resolución de las decisiones D-1 y D-2 — 2026-09-09
+
+El usuario aprobó **ambas recomendaciones del Leader** en la reanudación de sesión (`/akili-resume` → *"ve por lo recomendado"*). Las dos decisiones bloqueaban T-3; ninguna era opinión del Leader, las dos las levantó el Reviewer de T-2 con evidencia.
+
+### D-1 — La tabla §7.1 se implementa como **lista negra**
+
+| | |
+|---|---|
+| **Decisión** | Manda la columna *Prohíbe*. Un especificador de paquete npm ausente de la fila de su capa está **permitido**. La columna *Permite* queda como resumen de intención, no como regla ejecutable |
+| **Motivo** | TRD TEST-2 enumera una **lista cerrada** de prohibiciones, y §7.1 dice ser "la misma del TRD §4". Una lista blanca marcaría los `.spec.ts` de `domain/` y `application/` que importan `vitest`, haciendo fallar la pasada 1 **por construcción** desde la primera prueba de dominio |
+| **Precio, declarado** | Un paquete nuevo y nocivo entra sin avisar hasta que alguien lo añade a la fila. Se acepta: el conjunto de prohibiciones que importan (Angular, RxJS, Chart.js, Three) es estable y vive en el TRD |
+| **Cómo deja de ser prosa** | Fixture `domain-usa-vitest.ts` en T-3: importa `vitest` y la pasada 2 **no** debe marcarlo |
+| **Documentos tocados** | `design.md` §7.1 (párrafo de lectura de la tabla) · `tasks.md` T-3 (nota, alcance, fixtures, casilla nueva, tabla de cláusulas) |
+
+### D-2 — Se parte T-3; la pasada 3 pasa a ser **T-11**, tras T-6
+
+| | |
+|---|---|
+| **Decisión** | Opción **(b)**. T-3 conserva las pasadas 1 y 2 y se ejecuta ahora; la pasada de alcanzabilidad (RF-2.2, RF-2.3) se convierte en **T-11**, con dependencia de T-3 **y** T-6 |
+| **Motivo** | La pasada 3 exige alcanzar un archivo de cada capa desde `main.ts`, y `src/app/ui/` no existe hasta T-6. Retrasar todo T-3 (opción a) dejaría cuatro tareas escribiendo código sin la compuerta de arquitectura, que es el entregable central del spec (G-B). Debilitar la pasada (opción c) rebaja la compuerta justo donde más se necesita |
+| **Coste** | Una tarea más: **10 → 11**, ~940 → ~980 LOC, ~12 → ~13 rondas. Aprobado por el usuario junto con la decisión, así que el tripwire de presupuesto mide contra la cifra nueva y no dispara por un aumento ya autorizado |
+| **Deuda que absorbe** | La primera casilla de T-2 (*"las cuatro capas existen"*), abierta y transferida desde el PASS de T-2, queda asignada a T-11 |
+| **Documentos tocados** | `design.md` §7.1 y §1 (presupuesto) y §12 (confirmación de profundidad) · `tasks.md` encabezado, grafo de dependencias, T-3 recortada, **T-11 nueva**, tablas de cobertura · este `execution.md` (Document Control) |
+
+### Barrido de cierre de la corrección *(dos direcciones)*
+
+- **Hacia adelante** — `grep` de `10 tareas`, `~940`, `~12 rondas`, `pasada 3`, `tres pasadas`, `lista blanca` sobre la carpeta del spec. Tres sitios vivos con el valor viejo, los tres corregidos: `design.md` §1, `design.md` §12 (confirmación de profundidad) y el Document Control de este archivo. Las apariciones restantes en `execution.md` (líneas del análisis del Reviewer de T-2 y del planteamiento de las decisiones) **se conservan intactas a propósito**: son el registro histórico que produjo la decisión, y un log de auditoría no se reescribe hacia atrás.
+- **Hacia atrás** — quién cita §7.1: `tasks.md` T-3 y T-11 (ambas reescritas en esta enmienda) y la fila de riesgo de `execution.md` línea 224, que anticipó exactamente este problema y ahora queda resuelta por D-1. Ningún documento quedó afirmando algo falso.
+
+**T-3 queda desbloqueada.** Siguiente elegible: T-3, despachada a Antigravity por Orca.

@@ -6,7 +6,7 @@
 | Diseño | [`design.md`](design.md) |
 | Requisitos | [`requirements.md`](requirements.md) |
 | Estado | **Aprobado, pendiente de ejecución** — Fase 3 aprobada 2026-09-08 |
-| Presupuesto | 10 tareas · ~940 LOC a mano · ~12 rondas de revisión |
+| Presupuesto | **11 tareas · ~980 LOC a mano · ~13 rondas de revisión** *(revisado 2026-09-09 por la enmienda D-2; el original era 10 · ~940 · ~12)* |
 
 > **Nota para el Implementer:** este spec **crea** el proyecto. Hasta que T-1 esté hecha no existe ningún comando de verificación, así que las tareas anteriores a ella no existen y T-1 verifica a mano. A partir de T-2, toda tarea corre su comando antes de reportar.
 
@@ -16,18 +16,21 @@
 
 ```
 T-1 (crear proyecto)
- ├──► T-2 (cadena hexagonal) ──┬──► T-3 (prueba de arquitectura) ──┐
- │                             └──► T-7 (ErrorHandler + base) ──┐  │
+ ├──► T-2 (cadena hexagonal) ──┬──► T-3 (arquitectura, pasadas 1 y 2) ──┐
+ │                             └──► T-7 (ErrorHandler + base) ──┐       │
  ├──► T-4 (tokens) ──┬──► T-5 (fuentes) ──────────► T-9 (scripts + presupuesto) ──┐
- │                   ├──► T-6 (rutas + placeholders) ──┐                          │
+ │                   ├──► T-6 (rutas + placeholders) ──┬──► T-11 (pasada 3)       │
  │                   └──► T-7                          │                          │
  └───────────────────────────────────────────► T-8 (proveedores) ◄────────────────┘
                                                                     T-10 (constitución)
 
-Serie forzada:  T-1 antes que todo · T-3 tras T-2 · T-8 tras T-2, T-6 y T-7 · T-10 al final
+Serie forzada:  T-1 antes que todo · T-3 tras T-2 · T-11 tras T-3 y T-6 · T-8 tras T-2, T-6
+                y T-7 · T-10 al final
 Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (regla CC-3:
                 dist/, el servidor de desarrollo y node_modules/ son compartidos en un checkout)
 ```
+
+> **Por qué T-11 existe (enmienda D-2, aprobada 2026-09-09).** El grafo original ponía T-3 justo tras T-2, pero la pasada 3 de T-3 exige alcanzar *"al menos un archivo de cada capa"* desde `main.ts`, y `src/app/ui/` no existe hasta T-6: la pasada fallaba por construcción. T-3 conserva las pasadas 1 y 2 —la compuerta de arquitectura llega temprano, que es su propósito— y la pasada 3 se convierte en **T-11**, tras T-6. Ver [`design.md` §7.1](design.md).
 
 ---
 
@@ -95,26 +98,30 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
 
 ---
 
-### [ ] T-3 — Prueba de arquitectura con auto-verificación permanente
+### [ ] T-3 — Prueba de arquitectura con auto-verificación permanente *(pasadas 1 y 2)*
+
+> **Alcance recortado por la enmienda D-2 (2026-09-09):** la pasada 3 (alcanzabilidad desde `main.ts`, RF-2.2) **salió de esta tarea** y es ahora **T-11**, tras T-6. Motivo: `src/app/ui/` no existe hasta T-6, así que la pasada 3 aquí falla por construcción. Ver [`design.md` §7.1](design.md).
+>
+> **Lectura fijada por la enmienda D-1 (2026-09-09):** la tabla de [§7.1](design.md) se implementa como **lista negra**. Manda la columna *Prohíbe*; un especificador de paquete npm que no figure en ella está permitido. Esto hace legal `import { describe } from 'vitest'` en un `.spec.ts` de `domain/`, y sin esa lectura la pasada 1 falla en cuanto exista la primera prueba de dominio.
 
 - **Capa:** `tools/`
 - **Depende de:** T-2 *(necesita capas reales que analizar)*
 - **Paralelizable:** no
-- **Tamaño:** ~140 LOC (script + fixtures)
-- **Requisitos:** RF-3.1, RF-3.2, RF-3.3, RF-3.4, RF-2.2 *(alcanzabilidad)*
+- **Tamaño:** ~120 LOC (script + fixtures)
+- **Requisitos:** RF-3.1, RF-3.2, RF-3.3, RF-3.4
 - **Diseño:** [§7.1](design.md), [DD-3](design.md)
-- **Skills:** `tdd` *(los fixtures son las pruebas)*
+- **Skills:** `tdd` *(los fixtures son las pruebas)*, `systematic-debugging` *(si una pasada falla)*
 - **Ejemplar:** ninguno
 - **Alcance:**
-  - `tools/arch-test.mjs`: parsea cada `.ts` con `ts.createSourceFile`, resuelve cada import a su capa y lo evalúa contra la tabla de reglas de [§7.1](design.md).
-  - **Pasada 1:** `src/app/` debe salir limpia.
+  - `tools/arch-test.mjs`: parsea cada `.ts` con `ts.createSourceFile`, resuelve cada import a su capa y lo evalúa contra la tabla de reglas de [§7.1](design.md), **leída como lista negra** (D-1).
+  - **Pasada 1:** `src/app/` debe salir limpia — **incluidos los `.spec.ts`**, que importan `vitest` legalmente.
   - **Pasada 2:** `tools/fixtures/arch/` debe producir **exactamente** las infracciones esperadas, declaradas en el script.
-  - **Pasada 3:** desde `main.ts`, seguir los imports relativos transitivamente y verificar que se alcanza al menos un archivo de cada capa (RF-2.2).
-  - Fixtures permanentes: `domain-viola-angular.ts`, `application-viola-infra.ts`, y `domain-import-type.ts` *(caso válido que **no** debe marcarse)*.
+  - Fixtures permanentes: `domain-viola-angular.ts` *(infracción)*, `application-viola-infra.ts` *(infracción)*, `domain-import-type.ts` *(válido, **no** se marca)* y `domain-usa-vitest.ts` *(válido bajo D-1, **no** se marca)*.
   - Excluir `tools/fixtures/` del `tsconfig` de la aplicación para que no rompa el build.
   - Ignorar declaraciones `import type`.
-- **Fuera de alcance:** detección de ciclos, huérfanos o métricas de acoplamiento (ver DD-3, condición de revisión).
-- **Verificación:** `node tools/arch-test.mjs` termina en `0` con las tres pasadas.
+  - **Dejar el hueco de la pasada 3 explícito en el script** — un comentario que nombre `T-11` y RF-2.2, para que el siguiente lector no crea que la alcanzabilidad se olvidó.
+- **Fuera de alcance:** la pasada 3 / alcanzabilidad (es **T-11**); detección de ciclos, huérfanos o métricas de acoplamiento (ver DD-3, condición de revisión).
+- **Verificación:** `node tools/arch-test.mjs` termina en `0` con **las dos** pasadas.
 - **Descalificador de la evidencia:** un `exit 0` **no** es evidencia si la pasada 2 no reportó las infracciones esperadas. El script debe imprimir cuántas infracciones esperaba y cuántas encontró; si esos números no aparecen en la salida, la corrida es **inconcluso**, no aprobado.
 - **Entrada que haría fallar la verificación:** *(dos, y ambas deben probarse)*
   1. Añadir `import { signal } from '@angular/core'` a un archivo de `domain/` → la pasada 1 debe fallar nombrando el archivo.
@@ -124,8 +131,8 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
   - [ ] Con el import prohibido inyectado a mano, termina en ≠ `0` **y nombra el archivo y el import**
   - [ ] Con el analizador neutralizado, **la pasada 2 falla** — probado, no asumido
   - [ ] `domain-import-type.ts` **no** se marca como infracción
+  - [ ] `domain-usa-vitest.ts` **no** se marca como infracción (D-1, lista negra)
   - [ ] `application-viola-infra.ts` **sí** se marca (RF-3.4: se analiza `application/`, no solo `domain/`)
-  - [ ] La pasada 3 alcanza al menos un archivo por capa desde `main.ts`
   - [ ] `npx ng build` sigue verde: los fixtures no entran al build
 
 ---
@@ -334,6 +341,40 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
 
 ---
 
+### [ ] T-11 — Pasada 3: alcanzabilidad de las cuatro capas desde `main.ts`
+
+> **Tarea creada por la enmienda D-2 (aprobada 2026-09-09).** Era la pasada 3 de T-3. Se separó porque exige que `src/app/ui/` exista, y `ui/` nace en T-6. Ver [`design.md` §7.1](design.md) y la nota del grafo de dependencias.
+
+- **Capa:** `tools/`
+- **Depende de:** **T-3** *(el script y su andamiaje)* **y T-6** *(sin `ui/` la pasada no puede pasar)*
+- **Paralelizable:** no
+- **Tamaño:** ~40 LOC (una pasada más en el script existente + su fixture)
+- **Requisitos:** RF-2.2 *(alcanzabilidad y cláusula negativa)*, RF-2.3
+- **Diseño:** [§7.1](design.md), [DD-3](design.md)
+- **Skills:** `tdd`, `systematic-debugging`
+- **Ejemplar:** `tools/arch-test.mjs` — las pasadas 1 y 2 que produjo T-3. Misma forma de reporte, misma convención de conteo esperado-vs-encontrado.
+- **Alcance:**
+  - Añadir la **pasada 3** a `tools/arch-test.mjs`: partir de `src/main.ts`, seguir los imports relativos **transitivamente** y construir el conjunto de capas alcanzadas.
+  - Fallar si falta cualquiera de las cuatro (`domain/`, `application/`, `infrastructure/`, `ui/`), **nombrando cuál falta**.
+  - Cubrir la cláusula negativa de RF-2.2: un archivo alcanzado que esté vacío, sea un `index.ts` sin exportaciones o solo contenga un comentario de marcador **no cuenta** como habitante de su capa.
+  - Retirar del script el comentario de hueco que T-3 dejó apuntando a esta tarea.
+  - Cerrar la primera casilla de T-2 (*"las cuatro capas existen"*), que quedó abierta y transferida hasta aquí.
+- **Fuera de alcance:** tocar las pasadas 1 y 2, la tabla de reglas o los fixtures de T-3.
+- **Verificación:** `npm run test:arch` termina en `0` con **las tres** pasadas, y su salida nombra las cuatro capas alcanzadas.
+- **Descalificador de la evidencia:** un `exit 0` **no** es evidencia si la salida no enumera las cuatro capas alcanzadas. Una pasada 3 que recorra cero archivos y no encuentre nada que reprochar aprueba igual de verde que una correcta — es el mismo fallo que RF-3.2 obliga a demostrar en la pasada 2. Sin el listado impreso, la corrida es **inconcluso**.
+- **Entrada que haría fallar la verificación:** *(dos, y ambas deben probarse)*
+  1. Cortar a mano el import que lleva a `ui/` desde el arranque → la pasada 3 debe fallar **nombrando `ui/`**.
+  2. Vaciar el archivo de `domain/` alcanzado, dejando solo un comentario → la pasada 3 debe fallar por la cláusula negativa de RF-2.2, no aprobar por presencia del archivo.
+- **Hecho cuando:**
+  - [ ] `npm run test:arch` termina en `0` y **enumera** las cuatro capas alcanzadas
+  - [ ] Cortado el import a `ui/`, falla **nombrando la capa que falta**
+  - [ ] Con un archivo alcanzado vacío, falla por la cláusula negativa — probado, no asumido
+  - [ ] Las pasadas 1 y 2 siguen verdes y sin cambios
+  - [ ] El comentario de hueco de T-3 ya no está en el script
+  - [ ] La primera casilla de T-2 queda cerrada y anotada en `execution.md`
+
+---
+
 ## Cobertura de escenarios y cláusulas
 
 **El cierre es por escenario y por cláusula, no por identificador de requisito.** Un requisito "que aparece en una tarea" es la afirmación más débil posible.
@@ -345,7 +386,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
 | RF-1.3 | T-9 | RF-6.3 | T-6 |
 | RF-1.4 | T-9 | **RF-6.4** | ⚠️ **sin tarea — ver abajo** |
 | RF-2.1 | T-2 | RF-7.1 | T-2 |
-| RF-2.2 | T-2 *(creación)* + T-3 *(pasada 3)* | RF-7.2 | T-2 |
+| RF-2.2 | T-2 *(creación)* + **T-11** *(pasada 3)* | RF-7.2 | T-2 |
 | RF-2.3 | T-2 + T-3 | RF-7.3 | T-8 |
 | RF-3.1 | T-3 | RF-8.1 | T-5 |
 | RF-3.2 | T-3 | RF-8.2 | T-5 |
@@ -368,9 +409,9 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
 | `NO debe` emitir advertencias de presupuesto | RF-1.2 | T-9 |
 | `DEBE` imprimir máx. 1 línea en verde | RF-1.3 | T-9 |
 | `DEBE` imprimir salida completa en rojo | RF-1.4 | T-9 |
-| `NO debe` contener archivos vacíos ni `index.ts` sin exportaciones | RF-2.2 | T-3, pasada 3 |
+| `NO debe` contener archivos vacíos ni `index.ts` sin exportaciones | RF-2.2 | **T-11**, pasada 3 |
 | `DEBE` nombrar el archivo infractor | RF-3.2 | T-3 |
-| `NO debe` marcar `import type` ni relativo intra-capa | RF-3.3 | T-3, fixture `domain-import-type.ts` |
+| `NO debe` marcar `import type` ni relativo intra-capa | RF-3.3 | T-3, fixtures `domain-import-type.ts` y `domain-usa-vitest.ts` |
 | `DEBE` haberse retirado la advertencia de las guías | RF-4.2 | T-10 |
 | Se permite `transparent`, `currentColor`, `inherit` | RF-5.3 | T-4 |
 | `DEBE` registrarse la decisión con su motivo | RF-5.4 | T-10 |
