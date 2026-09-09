@@ -89,7 +89,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
 - **Descalificador de la evidencia:** si la prueba de `SellarEvento` importa algo de `@angular/*` para construirse, la prueba pasa pero **no demuestra RF-7.2**. Revisar los imports del archivo de prueba, no solo su resultado.
 - **Entrada que haría fallar la verificación:** pasar `-1` a `SelloDeTiempo` y esperar que lo acepte.
 - **Hecho cuando:**
-  - [ ] Las cuatro capas existen y cada una tiene al menos un archivo con contenido real
+  - [x] Las cuatro capas existen y cada una tiene al menos un archivo con contenido real *(transferida a T-11 por la enmienda D-2; cerrada por la pasada 3: `domain/` 2, `application/` 1, `infrastructure/` 3, `ui/` 9 habitantes válidos alcanzados desde `main.ts`)*
   - [ ] `domain/` no importa `@angular/*`, `rxjs`, ni otras capas
   - [ ] `application/` no importa `@angular/*` ni `infrastructure/`
   - [ ] `SellarEvento` se prueba con un doble, **sin `TestBed`, sin DOM, sin red**
@@ -354,7 +354,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
 
 ---
 
-### [ ] T-11 — Pasada 3: alcanzabilidad de las cuatro capas desde `main.ts`
+### [x] T-11 — Pasada 3: alcanzabilidad de las cuatro capas desde `main.ts`
 
 > **Tarea creada por la enmienda D-2 (aprobada 2026-09-09).** Era la pasada 3 de T-3. Se separó porque exige que `src/app/ui/` exista, y `ui/` nace en T-6. Ver [`design.md` §7.1](design.md) y la nota del grafo de dependencias.
 

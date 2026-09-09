@@ -13,8 +13,8 @@
  *  - D-1: La tabla de reglas se implementa como LISTA NEGRA. Rige la columna
  *    'Prohíbe'. Un especificador de paquete npm que no figure en ella está
  *    permitido (ej. 'vitest' en domain/ y application/ es legal).
- *  - D-2: La pasada 3 (alcanzabilidad desde main.ts — RF-2.2) NO forma parte de T-3;
- *    ha sido diferida a la tarea T-11 (tras T-6) cuando src/app/ui/ exista.
+ *  - D-2: La pasada 3 (alcanzabilidad desde main.ts — RF-2.2 / T-11) verifica
+ *    que las cuatro capas sean alcanzadas transitivamente con habitantes válidos.
  *
  * RAIZ DE COMPOSICION:
  *  - Archivos directamente bajo src/app/ (app.ts, app.config.ts, app.routes.ts,
@@ -361,6 +361,80 @@ function getTsFiles(dir) {
   return files;
 }
 
+/**
+ * Resuelve un import specifier relativo a un archivo TypeScript existente en disco.
+ * @param {string} fromFilePath Ruta absoluta del archivo emisor.
+ * @param {string} specifier Especificador relativo del módulo (ej. './app/app.config').
+ * @returns {string | null} Ruta absoluta del archivo .ts o null si no se resuelve.
+ */
+function resolveRelativeTsFile(fromFilePath, specifier) {
+  const candidate = path.resolve(path.dirname(fromFilePath), specifier);
+  if (fs.existsSync(candidate) && fs.statSync(candidate).isFile() && candidate.endsWith('.ts')) {
+    return candidate;
+  }
+  if (fs.existsSync(candidate + '.ts') && fs.statSync(candidate + '.ts').isFile()) {
+    return candidate + '.ts';
+  }
+  const indexCandidate = path.join(candidate, 'index.ts');
+  if (fs.existsSync(indexCandidate) && fs.statSync(indexCandidate).isFile()) {
+    return indexCandidate;
+  }
+  return null;
+}
+
+/**
+ * Evalúa si un archivo TypeScript alcanzado califica como habitante legítimo de su capa
+ * según la cláusula negativa de RF-2.2:
+ * "PERO NO debe contener archivos vacíos, index.ts sin exportaciones, ni comentarios
+ * de marcador de posición como único contenido."
+ * @param {string} filePath Ruta absoluta del archivo.
+ * @returns {{ valid: boolean, reason?: string }}
+ */
+function isValidLayerInhabitant(filePath) {
+  const content = fs.readFileSync(filePath, 'utf-8');
+  const trimmed = content.trim();
+
+  // 1. Archivo vacío
+  if (trimmed.length === 0) {
+    return { valid: false, reason: 'archivo vacío (0 caracteres significativos)' };
+  }
+
+  const sourceFile = ts.createSourceFile(
+    filePath,
+    content,
+    ts.ScriptTarget.Latest,
+    true
+  );
+
+  // 2. Comentario de marcador de posición como único contenido (sin sentencias/declaraciones)
+  if (sourceFile.statements.length === 0) {
+    return {
+      valid: false,
+      reason: 'solo contiene comentarios de marcador de posición o espacios en blanco',
+    };
+  }
+
+  // 3. index.ts sin exportaciones
+  if (path.basename(filePath).toLowerCase() === 'index.ts') {
+    const hasExports = sourceFile.statements.some((stmt) => {
+      if (ts.isExportDeclaration(stmt) || ts.isExportAssignment(stmt)) {
+        return true;
+      }
+      const modifiers = ts.canHaveModifiers(stmt) ? ts.getModifiers(stmt) : stmt.modifiers;
+      return modifiers?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword);
+    });
+
+    if (!hasExports) {
+      return {
+        valid: false,
+        reason: 'archivo index.ts sin ninguna exportación',
+      };
+    }
+  }
+
+  return { valid: true };
+}
+
 // =============================================================================
 // EJECUCIÓN PRINCIPAL
 // =============================================================================
@@ -452,14 +526,86 @@ function main() {
     console.log(`✔ Pasada 2 superada: se detectaron exactamente las ${expectedCount} infracciones esperadas.\n`);
   }
 
-  // ===========================================================================
-  // PASADA 3 (Alcanzabilidad desde main.ts — RF-2.2):
-  // NOTA DE DISEÑO (Enmienda D-2, aprobada 2026-09-09):
-  // La comprobación de alcanzabilidad desde main.ts no se implementa en esta tarea (T-3).
-  // Ha sido asignada a la tarea T-11 (tras T-6), ya que la capa src/app/ui/ todavía
-  // no existe. Implementarla prematuramente provocaría un fallo por construcción
-  // ajeno a defectos de código. El hueco en este punto es deliberado y planificado.
-  // ===========================================================================
+  // ---------------------------------------------------------------------------
+  // PASADA 3: Alcanzabilidad de las cuatro capas desde src/main.ts (RF-2.2)
+  // ---------------------------------------------------------------------------
+  console.log('--- PASADA 3: Alcanzabilidad de las cuatro capas desde src/main.ts (RF-2.2) ---');
+  const mainTsPath = path.join(repoRoot, 'src', 'main.ts');
+  const requiredLayers = ['domain', 'application', 'infrastructure', 'ui'];
+  const reachedValidFilesByLayer = {
+    domain: [],
+    application: [],
+    infrastructure: [],
+    ui: [],
+  };
+  const negativeClauseViolations = [];
+
+  const queue = [mainTsPath];
+  const visited = new Set();
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (visited.has(current)) continue;
+    visited.add(current);
+
+    const layer = getSourceLayer(current);
+    if (requiredLayers.includes(layer)) {
+      const validity = isValidLayerInhabitant(current);
+      const relPath = path.relative(repoRoot, current).replace(/\\/g, '/');
+      if (validity.valid) {
+        reachedValidFilesByLayer[layer].push(relPath);
+      } else {
+        negativeClauseViolations.push({
+          file: relPath,
+          layer,
+          reason: validity.reason,
+        });
+      }
+    }
+
+    const imports = parseImports(current);
+    for (const imp of imports) {
+      if (imp.specifier.startsWith('.')) {
+        const resolved = resolveRelativeTsFile(current, imp.specifier);
+        if (resolved && !visited.has(resolved)) {
+          queue.push(resolved);
+        }
+      }
+    }
+  }
+
+  // Comprobar violaciones a la cláusula negativa de RF-2.2
+  if (negativeClauseViolations.length > 0) {
+    hasError = true;
+    console.error('\n❌ FALLO EN PASADA 3: Infracción a la cláusula negativa de RF-2.2:');
+    for (const v of negativeClauseViolations) {
+      console.error(`  - ${v.file} (capa '${v.layer}'): ${v.reason}`);
+    }
+  }
+
+  // Enumerar capas alcanzadas y verificar si falta alguna
+  const reachedLayers = requiredLayers.filter(
+    (layer) => reachedValidFilesByLayer[layer].length > 0
+  );
+  const missingLayers = requiredLayers.filter(
+    (layer) => reachedValidFilesByLayer[layer].length === 0
+  );
+
+  console.log(`Archivos analizados transitivamente desde main.ts: ${visited.size}`);
+  console.log(`Capas requeridas: ${requiredLayers.map((c) => c + '/').join(', ')}`);
+  console.log(`Capas alcanzadas: ${reachedLayers.map((c) => c + '/').join(', ')}`);
+  for (const layer of requiredLayers) {
+    const count = reachedValidFilesByLayer[layer].length;
+    const sample = count > 0 ? ` (ej. ${reachedValidFilesByLayer[layer][0]})` : '';
+    console.log(`  - ${layer}/: ${count} archivo(s) válido(s)${sample}`);
+  }
+
+  if (missingLayers.length > 0) {
+    hasError = true;
+    console.error(`\n❌ FALLO EN PASADA 3: Falta(n) capa(s) por alcanzar desde src/main.ts: ${missingLayers.map((c) => c + '/').join(', ')}\n`);
+  } else if (negativeClauseViolations.length === 0) {
+    console.log(`✔ Pasada 3 superada: las cuatro capas fueron alcanzadas con habitantes válidos.\n`);
+  }
 
   // ---------------------------------------------------------------------------
   // Veredicto final

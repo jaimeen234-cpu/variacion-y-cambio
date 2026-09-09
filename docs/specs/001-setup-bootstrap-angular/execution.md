@@ -776,3 +776,63 @@ El Implementer sí reportó haberlo ejecutado. **El Leader lo confirma por su cu
 ### Frontera de capa — comprobada, no infringida
 
 `tokens.spec.ts` vive en `infrastructure/` e importa `../../app.config`, que a su vez importa de `ui/`. No es un hueco: `arch-test.mjs` clasifica `app.config.ts` como capa **`root`** (raíz de composición, la decisión del Leader registrada en T-3), y la regla de `infrastructure/` solo prohíbe destino `ui/`. `test:arch` sigue verde. Es además la **única** forma de cumplir §6.3, que exige la configuración real y no una copia.
+
+---
+
+## T-11 — Pasada 3: alcanzabilidad de las cuatro capas desde `main.ts`
+
+| | |
+|---|---|
+| **Estado** | ✅ **PASS** — al primer intento |
+| **Fecha** | 2026-09-09 |
+| **Implementer** | Antigravity · dispatch `ctx_6e1aa14a8d90` · **en paralelo con la auditoría de T-8** |
+| **Archivos** | `tools/arch-test.mjs` (+156/−10) — un solo archivo |
+| **Requisitos** | RF-2.2 *(alcanzabilidad y cláusula negativa)*, RF-2.3 |
+
+### Verificaciones ejecutadas por el Leader
+
+**Corrida normal** — la pasada 3 enumera las cuatro capas con sus habitantes, que era el descalificador de la evidencia:
+
+```
+Archivos analizados transitivamente desde main.ts: 19
+Capas alcanzadas: domain/, application/, infrastructure/, ui/
+  - domain/: 2 · application/: 1 · infrastructure/: 3 · ui/: 9 archivo(s) válido(s)
+✔ Pasada 3 superada: las cuatro capas fueron alcanzadas con habitantes válidos.
+```
+
+**Sabotaje de la cláusula negativa** — `domain/shared/model/sello-de-tiempo.ts` vaciado a `// marcador de posicion`:
+
+```
+❌ FALLO EN PASADA 3: Infracción a la cláusula negativa de RF-2.2:
+  - src/app/domain/shared/model/sello-de-tiempo.ts (capa 'domain'):
+    solo contiene comentarios de marcador de posición o espacios en blanco
+  - domain/: 1 archivo(s) válido(s)   ← bajó de 2
+```
+
+**El archivo existía y era alcanzado, y aun así falló.** La cláusula negativa está implementada, no asumida. Revertido; suite 26/26 y `arch-test` exit 0 después.
+
+### Veredicto del Reviewer — `STATUS: PASS`
+
+**El recorrido es un grafo de imports real, no un `glob`.** Es un BFS: `queue = [mainTsPath]` + `visited`, y un nodo solo entra por `parseImports(current)` → `specifier.startsWith('.')` → `resolveRelativeTsFile(...)`, que resuelve únicamente a un archivo existente. **`getTsFiles()` —el recorredor de directorios de las pasadas 1 y 2— no se invoca en la pasada 3.** La prueba de que no es un barrido está en los números: 19 archivos y `domain/` cuenta 2, porque **los `.spec.ts` están en disco pero son inalcanzables desde `main.ts`** y quedan correctamente fuera.
+
+`parseImports` cubre `import` estático, `export … from` **e `import()` dinámico**, así que sigue los `loadComponent` diferidos de las rutas — por eso `ui/` llega a 9. Ningún borde de la cadena alcanzada es `import type`, de modo que la alcanzabilidad medida es **alcanzabilidad en tiempo de ejecución**, que es lo que pide RF-2.2 (*"referenciado desde el arranque de la aplicación"*).
+
+**Alcance limpio.** Tres *hunks*, un archivo. Las 10 líneas eliminadas son 2 del bloque de cabecera (la nota D-2, reemplazada en el sitio) y el bloque de 8 líneas del comentario de hueco. **Cero líneas ejecutables borradas o movidas:** no hay refactor mecánico, solo inserción. Las pasadas 1 y 2, la tabla de reglas, `EXPECTED_INFRACTIONS` y los fixtures de T-3 quedan intactos, así que su comportamiento no cambia **por construcción**. La pasada 3 alza el mismo `hasError` que las anteriores.
+
+**El comentario de hueco desapareció.** Lo que `tasks.md` mandaba retirar era el bloque de 8 líneas *"no se implementa en esta tarea (T-3)… El hueco en este punto es deliberado"*, y está borrado. La línea 16 que sobrevive es otra cosa: la descripción en presente de lo que el script **ya hace**, en la lista de decisiones de diseño junto a D-1, que es donde la enmienda D-2 debe quedar registrada.
+
+**La cláusula negativa cubre RF-2.2 cláusula por cláusula:** archivo vacío, solo-comentarios (`sourceFile.statements.length === 0`) e `index.ts` sin exportaciones se rechazan **con motivo nombrado**, y un archivo rechazado queda excluido del conteo de su capa **y** escala a `hasError` — más estricto que *"no cuenta"*, coherente con el *"PERO NO debe contener"* del requisito.
+
+### Casilla huérfana de T-2, cerrada aquí
+
+La primera casilla de T-2 (*"Las cuatro capas existen y cada una tiene al menos un archivo con contenido real"*) quedó abierta en su PASS y se transfirió a T-11 por la enmienda D-2. **Cerrada ahora** por la pasada 3, que es precisamente la verificación automática que le faltaba: `domain/` 2, `application/` 1, `infrastructure/` 3, `ui/` 9 habitantes válidos alcanzados desde `main.ts`. El Reviewer señaló que el cierre era tarea del Leader, no del Implementer.
+
+### Incidente de concurrencia — error del Leader, registrado
+
+**Al commitear T-8 con `git add -A src/`, el Leader se llevó `src/app/domain/shared/ports/reloj.ts` mientras Antigravity lo tenía vaciado para el sabotaje 2 de T-11.** El commit `b75af0f` quedó con el puerto del reloj reducido a una línea de comentario. La suite estaba en verde porque las pruebas de T-8 habían corrido antes del sabotaje.
+
+Es exactamente el riesgo que describe la regla **CC-3** de las guías raíz, citada por el propio Leader dos mensajes antes de infringirla. Paralelizar la auditoría de T-8 con la implementación de T-11 era correcto —no comparten archivos ni salida de build—; lo incorrecto fue el `git add -A` sobre un directorio que otro agente tenía en las manos.
+
+**Corregido con `--amend`** (nada estaba empujado): el commit es ahora `6a8d78c`, con el archivo íntegro, y se reverificó **26/26** y `arch-test` exit 0.
+
+**Regla operativa que sale de aquí:** mientras haya un agente delegado activo, los `git add` van **por ruta explícita**, nunca `-A`. Candidata a lección de kaizen en `/akili-archive`.
