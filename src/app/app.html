@@ -1,2 +1,20 @@
-<h1>Hello, variacion-y-cambio</h1>
-<router-outlet></router-outlet>
+<header class="vc-header">
+  <nav class="vc-navbar" aria-label="Navegación principal">
+    <div class="vc-wrap">
+      <a routerLink="/" class="vc-brand">
+        Variación <span class="vc-grad-text">y Cambio</span>
+      </a>
+      <div class="vc-navlinks">
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Inicio</a>
+        <a routerLink="/laboratorio" routerLinkActive="active">Laboratorio</a>
+        <a routerLink="/conceptos" routerLinkActive="active">Conceptos</a>
+        <a routerLink="/formulas" routerLinkActive="active">Fórmulas</a>
+        <a routerLink="/cartilla" routerLinkActive="active">Cartilla</a>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<main class="vc-main">
+  <router-outlet />
+</main>

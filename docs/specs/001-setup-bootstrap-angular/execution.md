@@ -682,3 +682,37 @@ Se registran aquí porque el Reviewer advirtió que hoy viven **solo en un comen
 **Presupuesto: excedido y aceptado.** ~887 LOC de ~980 con **5 de 11 tareas** (45 % del trabajo, 90 % del presupuesto de líneas). Quedan seis tareas y ~93 LOC nominales, lo que significa que el spec se escribió con una estimación baja, no que las tareas se hayan desmadrado: los tres excesos (T-3 4×, T-4 2,4×, T-5 1,6×) fueron verbosidad y trabajo exigido, nunca alcance no pedido — el Reviewer lo verificó las tres veces. Con la entrega mañana, renegociar la cifra no cambia ninguna decisión. Se registra y se sigue.
 
 **Advisories pendientes que mueren aquí.** Los diecisiete registrados en T-3, T-4 y T-5 quedan como están: registrados, sin dueño y sin tarea. Los cuatro con consecuencia real fuera de este spec —el peso mono 600 que `002/02` necesitará, el subsetting de fuentes para RNF-1, el `npm ci` en limpio, y el `prefers-reduced-motion` global— ya están anotados contra sus tareas o specs destino.
+
+---
+
+## T-6 — Tabla de rutas completa y seis páginas placeholder
+
+| | |
+|---|---|
+| **Estado** | ✅ **PASS** — al primer intento |
+| **Fecha** | 2026-09-09 · primera tarea bajo el régimen P-5 (auditoría solo de conformidad) |
+| **Intentos** | 1 · auditoría en **88 s** frente a ~300 s de las anteriores |
+| **Implementer** | Antigravity · dispatch `ctx_6e71a762da27` |
+| **Archivos** | 13 · +417/−13 · `app.{ts,html,scss,routes.ts,spec.ts}` · `ui/shared/placeholder/placeholder.ts` · seis páginas en `ui/pages/*/` · `ui/routes.spec.ts` |
+| **Requisitos** | RF-6.1, RF-6.2, RF-6.3, RF-6.4 |
+
+### Verificación del Leader antes de delegar *(régimen P-5: lo objetivo se comprueba aquí, el Reviewer solo juzga)*
+
+| Casilla | Evidencia |
+|---|---|
+| Chunk diferido por página | `npx ng build` emite **seis** chunks con nombre: `no-encontrado` 1,15 kB · `laboratorio` 471 B · `conceptos` 466 B · `formulas` 466 B · `cartilla` 463 B · `inicio` 457 B. Inicial: **62,30 kB transferidos** |
+| Cero hex sueltos | `grep` vacío |
+| `OnPush` | los siete componentes |
+| Suite | 12/12 en `ui`, **19/19** completa |
+
+### Veredicto del Reviewer — `STATUS: PASS`
+
+**El descalificador queda cerrado.** `ui/routes.spec.ts` es navegación real: `RouterTestingHarness.create()` + `await harness.navigateByUrl(...)`, y afirma sobre `harness.routeNativeElement?.textContent` en las seis rutas. **Ningún `TestBed.createComponent(Pagina)`** en el spec de rutas. RF-6.2 queda cubierto conductualmente, no por presencia.
+
+**RF-6.3 en letra y en efecto.** El comodín es `{ path: '**', loadComponent: … no-encontrado }`, **sin `redirectTo`** en ninguna de las seis entradas, y la prueba fija además `expect(router.url).toBe('/ruta-inexistente-invalida')`: la URL se conserva.
+
+**RF-6.4 — sin obligación heredada abierta por este eje.** El Reviewer cruzó las cinco páginas contra lo que promete la familia `002`: `03-contenido-y-cartilla` produce introducción (`inicio`), guía de manejo (`conceptos`), `formulas` y `cartilla` —y su propuesta ya declara la cartilla como *"una ruta con `@media print`"*, es decir la que existe—; `04-retos-argumentacion` y `05-visual-3d-procesador` se insertan **dentro** del flujo del laboratorio según `family.md`, no como páginas nuevas. **Ninguna página es previsiblemente partible o renombrable.** Implementar `002` no exigirá tocar `app.routes.ts`.
+
+**RF-6.2 — placeholder inequívoco.** Badge en mayúsculas *"Módulo en Construcción"* en `--vc-warning`, borde `1px dashed`, `<h1>{{ nombre() }}</h1>` y caja *"Especificación responsable:"* con `<code>{{ spec() }}</code>`. Ambas entradas son `input.required<string>()`: **una página no puede quedarse sin nombre ni sin spec**. Atribuciones correctas por página (laboratorio → `002/02`; inicio, conceptos, formulas, cartilla → `002/03`; no-encontrado → este spec).
+
+**Comprobación extra del Reviewer:** todos los custom properties usados en `app.scss`, `placeholder.ts` y `no-encontrado.ts` existen en `_tokens.scss` — ninguna `var()` cuelga sin definición.

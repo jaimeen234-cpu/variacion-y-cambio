@@ -208,7 +208,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
 
 ---
 
-### [ ] T-6 — Tabla de rutas completa y seis páginas placeholder
+### [x] T-6 — Tabla de rutas completa y seis páginas placeholder
 
 - **Capa:** `ui/pages/`, `ui/shared/`
 - **Depende de:** T-4

@@ -1,0 +1,69 @@
+.vc-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--vc-bg-base);
+  border-bottom: 1px solid var(--vc-border);
+}
+
+.vc-navbar {
+  width: 100%;
+}
+
+.vc-wrap {
+  max-width: var(--vc-bp-xl);
+  margin: 0 auto;
+  padding: 0 var(--vc-space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--vc-space-4);
+  height: 60px;
+}
+
+.vc-brand {
+  font-size: var(--vc-fs-h2);
+  font-weight: 700;
+  color: var(--vc-text-primary);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.vc-grad-text {
+  background: var(--vc-grad-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.vc-navlinks {
+  display: flex;
+  gap: var(--vc-space-1);
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.vc-navlinks a {
+  color: var(--vc-text-secondary);
+  text-decoration: none;
+  font-size: var(--vc-fs-caption);
+  font-weight: 600;
+  padding: var(--vc-space-2) var(--vc-space-3);
+  border-radius: var(--vc-radius-sm);
+  transition: color var(--vc-motion-fast), background-color var(--vc-motion-fast);
+}
+
+.vc-navlinks a:hover {
+  color: var(--vc-text-primary);
+  background: var(--vc-border);
+}
+
+.vc-navlinks a.active {
+  color: var(--vc-text-primary);
+  background: var(--vc-border);
+  box-shadow: inset 0 -2px 0 0 var(--vc-primary);
+}
+
+.vc-main {
+  min-height: calc(100vh - 60px);
+}
