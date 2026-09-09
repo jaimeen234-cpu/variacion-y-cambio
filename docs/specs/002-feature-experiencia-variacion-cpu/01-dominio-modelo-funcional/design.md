@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Spec | `docs/specs/002-feature-experiencia-variacion-cpu/01-dominio-modelo-funcional/` |
-| Estado | **Draft — pendiente de aprobación** |
+| Estado | **Aprobado** — 2026-09-08 |
 | Fecha | 2026-09-08 |
 | Requisitos | [`requirements.md`](requirements.md) — RF-1…RF-11, RNF-1…RNF-7 |
 | Profundidad | Full |
@@ -292,9 +292,9 @@ Tres números derivados del diseño ya escrito. **No son un techo de calidad: so
 
 | Magnitud | Estimación | Nota |
 |---|---|---|
-| **Tareas** | **14** | Por encima del rango sano de 4–12 de la plantilla, por debajo del umbral de 15 que obliga a partir en familia. Es consciente: este spec ya **es** una hija de familia y partirlo otra vez fragmentaría el modelo matemático en pedazos que no se pueden verificar por separado |
-| **LOC** | **≈ 4.070** (≈ 2.050 de código, ≈ 2.020 de pruebas) | La paridad código/pruebas no es casual: RNF-3 exige un caso de referencia por fórmula y las restricciones negativas llevan prueba propia |
-| **Rondas de revisión** | **≈ 18** | Una por tarea, más una segunda esperada en las cuatro de más riesgo: `PoliticaThrottling`, `SimuladorLazoTermico`, el adaptador JSON y el catálogo |
+| **Tareas** | **15** *(revisado al descomponer; la estimación previa a `tasks.md` fue 14)* | El rango sano de la plantilla es 4–12 y el umbral de partición es *más de* 15, así que queda justo en el límite superior. Es consciente: este spec ya **es** una hija de familia, y partirlo otra vez fragmentaría el modelo matemático en pedazos que no se pueden verificar por separado. **La tarea nº 15 apareció al descomponer:** RF-11 necesitaba su propia tarea para registrar la deriva como pendiente, y eso no se vio hasta enumerar |
+| **LOC** | **≈ 4.110** (≈ 2.090 de código, ≈ 2.020 de pruebas) | La paridad código/pruebas no es casual: RNF-3 exige un caso de referencia por fórmula y las restricciones negativas llevan prueba propia |
+| **Rondas de revisión** | **≈ 19** | Una por tarea, más una segunda esperada en las cuatro de más riesgo: `PoliticaThrottling`, `SimuladorLazoTermico`, el adaptador JSON y el catálogo |
 
 **Comparación con la profundidad declarada:** coincide con `Full`. Ninguna señal de sobredimensión ni de infradimensión, así que no hay recomendación de cambio de nivel.
 
@@ -305,7 +305,7 @@ Tres números derivados del diseño ya escrito. **No son un techo de calidad: so
 | 1 — Vocabulario y razón de cambio | T-1, T-2 | ≈ 870 | Las magnitudes y la marca nominal. Todo lo demás se apoya aquí |
 | 2 — Entidades y modelo físico | T-3…T-7 | ≈ 1.120 | Las cuatro fórmulas contra sus valores de referencia |
 | 3 — Motor, métricas y comparación | T-8…T-10 | ≈ 710 | El bucle, el determinismo y la exactitud de RF-7.2 |
-| 4 — Fórmulas publicadas y frontera hexagonal | T-11…T-14 | ≈ 1.370 | El catálogo, sus referencias y el registro de proveedores |
+| 4 — Fórmulas publicadas y frontera hexagonal | T-11…T-15 | ≈ 1.410 | El catálogo, sus referencias y el registro de proveedores |
 
 ---
 
