@@ -33,7 +33,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
 
 ## Tareas
 
-### [ ] T-1 — Crear el proyecto Angular 21 LTS en la raíz del repositorio
+### [x] T-1 — Crear el proyecto Angular 21 LTS en la raíz del repositorio
 
 - **Capa:** raíz del proyecto (configuración)
 - **Depende de:** ninguna
