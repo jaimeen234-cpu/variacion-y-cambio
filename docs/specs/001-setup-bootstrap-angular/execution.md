@@ -665,3 +665,20 @@ Se registran aquí porque el Reviewer advirtió que hoy viven **solo en un comen
 5. **Formalizar la excepción OFL-1.1** en `AGENTS.md`, `CLAUDE.md` §Licencias y en **`requirements.md` RNF-6**, que hoy dice literalmente *"0 dependencias fuera de MIT / Apache-2.0 / BSD / ISC"* y queda contradicho por dos dependencias instaladas con aprobación del spec. Nótese que `tasks.md` T-9 **ya** lista `OFL` entre las licencias aceptables: la contradicción es entre RNF-6 y T-9, y le toca a T-10 cerrarla.
 
 *(Numeración continuada desde las cuatro obligaciones registradas en T-4.)*
+
+---
+
+## Cambio de régimen — 2026-09-09, tras T-5
+
+**Instrucción del usuario:** *"vamos a acelerar el desarrollo y las reviews ser más objetivo debido a que necesitamos entregar esto a más tardar mañana"*. Se registra como desviación **P-5**.
+
+| Qué cambia | Qué se conserva |
+|---|---|
+| Las auditorías pasan a **solo conformidad con el spec**. Se retiran las lentes 4R y el bloque `ADVISORY` | El **gate PASS/FAIL intacto**. Las dos veces que falló encontró defectos reales —la evasión del `grep` en T-4, la licencia equivocada en T-5—, y un rework de cuatro minutos es más barato que descubrirlo en la entrega |
+| El Leader deja de encargar al Reviewer la auditoría adversarial de sus propias enmiendas. Las adjudica y las registra | *Autor ≠ auditor* sobre el **código**, que es donde la independencia importa |
+| Briefs más cortos, sin repetir lo que el worker puede leer | El descalificador de la evidencia y las entradas que deben hacer fallar la verificación: son lo que distingue un verde real de uno decorativo |
+| **El tripwire de presupuesto se da por disparado y no se vuelve a levantar** | El registro del gasto real, abajo |
+
+**Presupuesto: excedido y aceptado.** ~887 LOC de ~980 con **5 de 11 tareas** (45 % del trabajo, 90 % del presupuesto de líneas). Quedan seis tareas y ~93 LOC nominales, lo que significa que el spec se escribió con una estimación baja, no que las tareas se hayan desmadrado: los tres excesos (T-3 4×, T-4 2,4×, T-5 1,6×) fueron verbosidad y trabajo exigido, nunca alcance no pedido — el Reviewer lo verificó las tres veces. Con la entrega mañana, renegociar la cifra no cambia ninguna decisión. Se registra y se sigue.
+
+**Advisories pendientes que mueren aquí.** Los diecisiete registrados en T-3, T-4 y T-5 quedan como están: registrados, sin dueño y sin tarea. Los cuatro con consecuencia real fuera de este spec —el peso mono 600 que `002/02` necesitará, el subsetting de fuentes para RNF-1, el `npm ci` en limpio, y el `prefers-reduced-motion` global— ya están anotados contra sus tareas o specs destino.
