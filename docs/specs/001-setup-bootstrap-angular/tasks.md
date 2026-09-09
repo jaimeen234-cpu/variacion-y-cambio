@@ -137,7 +137,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
 
 ---
 
-### [ ] T-4 — Tokens de diseño verificados contra BLK
+### [x] T-4 — Tokens de diseño verificados contra BLK
 
 - **Capa:** `ui/styles/`
 - **Depende de:** T-1
@@ -154,7 +154,13 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
   - Prueba que compara la lista de hex de acentos y gradientes contra los valores verificados de BLK.
   - Verificación de que ningún otro archivo del proyecto contiene hex, `rgb()` o `hsl()`, permitiendo `transparent`, `currentColor` e `inherit`.
 - **Fuera de alcance:** aplicar los tokens a cualquier pantalla real; fuentes (T-5).
-- **Verificación:** `npx ng test --watch=false --include=src/app/ui/styles` · `grep -rEn '#[0-9a-fA-F]{3,8}|rgb\(|hsl\(' src --include='*.scss' --include='*.ts' --include='*.html' | grep -v '_tokens.scss'` debe salir vacío.
+- **Verificación:** `npx ng test --watch=false --include=src/app/ui/styles` · `grep -rEn '#[0-9a-fA-F]{3,8}|rgb\(|hsl\(' src --include='*.scss' --include='*.ts' --include='*.html' | grep -v '_tokens.scss' | grep -v '\.spec\.ts'` debe salir vacío.
+
+> **Enmienda D-3 (2026-09-09) — el `grep` exime también a los `.spec.ts`.** La redacción original era **contradictoria consigo misma**: esta misma tarea exige *"una prueba que compara la lista de hex de acentos y gradientes contra los valores verificados de BLK"*, y esa prueba **no puede existir** sin sostener esos hex fuera de `_tokens.scss`. Un `grep` que solo exime a `_tokens.scss` declara ilegal el archivo que la tarea obliga a escribir.
+>
+> La exención es **estrecha y a propósito**: solo `*.spec.ts`, solo porque un archivo de pruebas es un *verificador* de tokens, no un *consumidor*. La regla de cero hex sueltos existe para que ninguna pantalla pinte un color a mano; una prueba que afirma cuál debe ser el color es lo contrario de esa infracción. Un `.ts` de componente, un `.scss` de página o un `.html` siguen bajo la regla sin excepción.
+>
+> Se levantó en la auditoría del intento 1 de T-4, donde el Implementer resolvió el conflicto **rodeando el verificador** (`hex('e14eca')` en lugar de `'#e14eca'`) en vez de declararlo. La enmienda existe para que el próximo no tenga que elegir entre desobedecer y disimular. **T-10 debe llevar esta exención a las guías raíz (`AGENTS.md` y `CLAUDE.md`) y enmendar `requirements.md` RF-5.3**, que sigue redactado sin excepciones y hoy queda contradicho por código aprobado. Levantado por el Reviewer en el intento 2; sin esa enmienda, `/akili-validate` lo marcará.
 - **Descalificador de la evidencia:** la prueba comprueba que el **valor** del token es correcto. **No puede probar que el token correcto se use en el lugar correcto** — un componente que usara `--vc-danger` para un estado de éxito pasaría. Esa clase de defecto queda para la revisión del diff (riesgo aceptado, declarado en requisitos §8).
 - **Entrada que haría fallar la verificación:** cambiar `#e14eca` por `#e14ecb` en `_tokens.scss`.
 - **Hecho cuando:**

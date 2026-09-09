@@ -1,0 +1,111 @@
+/**
+ * =============================================================================
+ * _tokens.scss — Design Tokens de Variación y Cambio
+ * =============================================================================
+ *
+ * Catálogo completo de tokens del sistema (docs/ux-ui/design.md §7).
+ * Único archivo del proyecto que contiene valores de color literales (RF-5.3).
+ *
+ * PROCEDENCIA ANOTADA POR GRUPO (design.md §8.1 / DD-2):
+ *  - Acentos: blk-design-system@1.0.2 -> custom/_variables.scss [Verificado]
+ *  - Estados de acento: blk-design-system@1.0.2 -> custom/_variables.scss [Verificado]
+ *  - Gradientes: blk-design-system@1.0.2 -> custom/_misc.scss y firma visual BLK [Verificado]
+ *  - Tipografía: blk-design-system@1.0.2 -> $font-family-base (Poppins) [Verificado]
+ *  - Superficies: Black Dashboard (Creative Tim), no kit BLK. Desviación declarada DD-2.
+ *  - Espaciado, radio, sombra, movimiento, breakpoints: Propios del proyecto.
+ *
+ * DELTAS FRENTE A docs/ux-ui/design.md §7 (RF-5.4 — PENDIENTES DE CORRECCIÓN EN T-10):
+ *  - --vc-font-sans: incluye 'BlinkMacSystemFont' (presente en el mock mockup/index.html l.25, ausente en §7.4). Motivo: ejemplar validado visualmente por el usuario.
+ *  - --vc-text-muted: 'rgba(255, 255, 255, 0.38)' (presente en el mock mockup/index.html l.20, ausente en §7.1). Motivo: ejemplar validado visualmente por el usuario.
+ *
+ * AUSENCIA DELIBERADA DE TEMA CLARO (RF-9.3 / design.md §11):
+ * La aplicación es exclusivamente dark-only en v1 (PRD O7). La paleta de BLK
+ * y sus contrastes están calibrados sobre fondo oscuro (#1e1e2f). No se incluye
+ * bloque @media (prefers-color-scheme: light); la ausencia es deliberada.
+ * =============================================================================
+ */
+
+:root {
+  /* ---------------------------------------------------------------------------
+   * 1. Superficies (Procedencia: Black Dashboard — Desviación declarada DD-2)
+   * --------------------------------------------------------------------------- */
+  --vc-bg-base: #1e1e2f;
+  --vc-bg-surface: #27293d;
+  --vc-bg-elevated: #2b3553;
+
+  /* ---------------------------------------------------------------------------
+   * 2. Acentos (Procedencia: blk-design-system@1.0.2 -> custom/_variables.scss)
+   * --------------------------------------------------------------------------- */
+  --vc-primary: #e14eca;
+  --vc-info: #1d8cf8;
+  --vc-success: #00f2c3;
+  --vc-warning: #ff8d72;
+  --vc-danger: #fd5d93;
+
+  /* ---------------------------------------------------------------------------
+   * 3. Estados de acento (Procedencia: blk-design-system@1.0.2 -> custom/_variables.scss)
+   * --------------------------------------------------------------------------- */
+  --vc-primary-states: #ba54f5;
+
+  /* ---------------------------------------------------------------------------
+   * 4. Texto y bordes (Procedencia: blk-design-system@1.0.2)
+   * --------------------------------------------------------------------------- */
+  --vc-text-primary: #ffffff;
+  --vc-text-secondary: rgba(255, 255, 255, 0.6);
+  --vc-text-muted: rgba(255, 255, 255, 0.38);
+  --vc-border: rgba(255, 255, 255, 0.1);
+
+  /* ---------------------------------------------------------------------------
+   * 5. Gradientes (Procedencia: BLK Design System -> custom/_misc.scss y firma BLK)
+   * --------------------------------------------------------------------------- */
+  --vc-grad-primary: linear-gradient(0deg, #ba54f5 0%, #e14eca 100%);
+  --vc-grad-info: linear-gradient(0deg, #1d8cf8 0%, #3358f4 100%);
+  --vc-grad-card: linear-gradient(0deg, #1e1e2f 0%, #1e1e24 100%);
+
+  /* ---------------------------------------------------------------------------
+   * 6. Tipografía (Procedencia: BLK Design System $font-family-base y monoespaciada tabular)
+   * --------------------------------------------------------------------------- */
+  --vc-font-sans: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --vc-font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --vc-fs-display: clamp(2rem, 4vw, 3.25rem);
+  --vc-fs-h1: clamp(1.6rem, 3vw, 2.25rem);
+  --vc-fs-h2: 1.375rem;
+  --vc-fs-body: 0.9375rem;
+  --vc-fs-caption: 0.75rem;
+  --vc-fs-metric: clamp(1.75rem, 3vw, 2.5rem);
+
+  /* ---------------------------------------------------------------------------
+   * 7. Espaciado, radio, sombra, movimiento (Procedencia: Propios del proyecto)
+   * --------------------------------------------------------------------------- */
+  --vc-space-1: 4px;
+  --vc-space-2: 8px;
+  --vc-space-3: 16px;
+  --vc-space-4: 24px;
+  --vc-space-5: 32px;
+  --vc-space-6: 48px;
+
+  --vc-radius-sm: 4px;
+  --vc-radius-md: 8px;
+  --vc-radius-lg: 12px;
+
+  --vc-shadow-card: 0 1px 20px 0 rgba(0, 0, 0, 0.1);
+  --vc-shadow-raised: 0 10px 25px 0 rgba(0, 0, 0, 0.3);
+
+  --vc-motion-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --vc-motion-base: 240ms cubic-bezier(0.4, 0, 0.2, 1);
+  --vc-tick-sim: 100ms;
+
+  /* ---------------------------------------------------------------------------
+   * 8. Breakpoints (Procedencia: Propios del proyecto / Grid responsive)
+   * --------------------------------------------------------------------------- */
+  --vc-bp-sm: 576px;
+  --vc-bp-md: 768px;
+  --vc-bp-lg: 992px;
+  --vc-bp-xl: 1200px;
+}
+
+/* Variables SCSS auxiliares para consultas de medios (@media) */
+$vc-bp-sm: 576px;
+$vc-bp-md: 768px;
+$vc-bp-lg: 992px;
+$vc-bp-xl: 1200px;

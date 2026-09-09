@@ -1,0 +1,54 @@
+/**
+ * =============================================================================
+ * _base.scss — Configuración base y reset mínimo
+ * =============================================================================
+ *
+ * AUSENCIA DELIBERADA DE MODO CLARO (RF-9.3 / design.md §11):
+ * La aplicación es exclusivamente 'dark-only' en v1 (PRD O7). La identidad
+ * visual de BLK Design System, su paleta, sus gradientes y sus sombras están
+ * calibrados sobre fondo oscuro (var(--vc-bg-base)). Implementar un modo claro requeriría
+ * recalibrar toda la sección 7 sin requerimiento de usuario.
+ * Por ende, la ausencia de un bloque @media (prefers-color-scheme: light) es deliberada.
+ * =============================================================================
+ */
+
+@use 'tokens';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  /* RF-9.1: Pinta explícitamente el fondo con token; prohibido heredar transparente */
+  background-color: var(--vc-bg-base);
+  color: var(--vc-text-primary);
+  font-family: var(--vc-font-sans);
+  font-size: var(--vc-fs-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
