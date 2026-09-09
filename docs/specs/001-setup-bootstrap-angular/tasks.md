@@ -267,7 +267,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
 
 ---
 
-### [ ] T-8 — Verificación de que ningún token queda sin proveedor
+### [x] T-8 — Verificación de que ningún token queda sin proveedor
 
 - **Capa:** pruebas de `infrastructure/di/`
 - **Depende de:** T-2, T-6, T-7

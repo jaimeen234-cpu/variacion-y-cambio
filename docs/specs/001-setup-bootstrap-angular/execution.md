@@ -744,3 +744,35 @@ El brief afirmaba *"`ui/` NO puede importar de `infrastructure/`"*. **Es falso:*
 **Sin trazas técnicas visibles.** La plantilla renderiza solo copy estático más `{{ evento().sello.iso }}`. **`evento().descripcion` —el único campo que arrastra el mensaje crudo— nunca se interpola**, y `error.stack` no se toca en ninguna capa de UI. La traza completa va solo a `console.error('[Error No Controlado - Diagnóstico]', { error, sello, descripcion })`. La prueba lo blinda con tres negativas: `not.toContain('TypeError')`, `not.toContain('Fallo de cálculo…')`, `not.toContain('stack')`.
 
 **Resto del contrato:** `ErrorHandler` registrado con `useExisting: ManejadorErrorGlobal`, y la prueba `toBeInstanceOf` hace que la entrada saboteadora (quitar el proveedor) falle de verdad. `app.html` sustituye header y `<main>` completos por `<vc-error-screen>`: no queda pantalla en blanco. Los 22 tokens CSS usados existen en `_tokens.scss`; el wrapper pinta `--vc-bg-base` explícito, sin heredar transparencia (RF-9.1). `ErrorScreen` standalone + `OnPush`, con `role="alert"` y `aria-live="assertive"`. `signal` vive en `ui/core/`, donde es legal.
+
+---
+
+## T-8 — Verificación de que ningún token queda sin proveedor
+
+| | |
+|---|---|
+| **Estado** | ✅ **PASS** — al primer intento · auditoría en **86 s** |
+| **Fecha** | 2026-09-09 |
+| **Implementer** | Antigravity · dispatch `ctx_5ac677d42ec0` |
+| **Archivos** | `src/app/infrastructure/di/tokens.spec.ts` (+45) — un solo archivo |
+| **Requisitos** | RF-7.3 |
+
+**Verificación del Leader antes de delegar:** suite **26/26**, 4/4 en `infrastructure`.
+
+### Las dos trampas de la tarea, esquivadas
+
+**Descalificador —`providers: [...appConfig.providers]`.** Es un *spread* limpio del arreglo real de `app.config.ts`, **el mismo objeto que importa `main.ts`**, sin añadir ni sustituir ningún proveedor. El Reviewer lo comprobó explícitamente porque era la pregunta que le hice: una prueba que añadiera proveedores propios podría tapar un hueco de la configuración real y pasar verde con la aplicación rota.
+
+**Derivación, no lista a mano.** `Object.entries(tokensModulo).filter(… instanceof InjectionToken)` sobre `import * as tokensModulo from './tokens'`. Un token nuevo sin proveedor rompe esta prueba **sin que nadie tenga que actualizarla**, que es el punto entero de RF-7.3.
+
+**Guarda contra el no-op, añadida por el Implementer sin que se le pidiera.** El test `'debe encontrar al menos un InjectionToken exportado en tokens.ts'` hace exactamente lo que declara (`expect(entradasTokens.length).toBeGreaterThan(0)`). Sin ella, un filtro que devolviera cero tokens haría que la prueba exhaustiva pasara **vacuamente**. Es el mismo modo de fallo que la pasada 2 de T-3 tuvo que descartar, y aquí lo cerró por iniciativa propia.
+
+### Sabotaje — el Reviewer no pudo ejecutarlo, y lo dijo
+
+Su wrapper es de solo lectura (`Read, Grep, Glob`), así que **confirmó por construcción, no por ejecución** — y lo declaró en vez de insinuar que lo había corrido. Su análisis: borrando `SELLAR_EVENTO` de `providers.ts`, el token sigue exportado en `tokens.ts` y por tanto sigue en la derivación; `TestBed.inject(token, null)` devuelve `null` y falla nombrando el token por **tres vías independientes** — el título del `it`, el mensaje de aserción (`El token 'SELLAR_EVENTO' no tiene proveedor registrado en appConfig.providers`) y el `NullInjectorError` del caso exhaustivo.
+
+El Implementer sí reportó haberlo ejecutado. **El Leader lo confirma por su cuenta abajo**, cuando la terminal quede libre: T-11 está corriendo en paralelo y una corrida de pruebas simultánea contaminaría ambas medidas (regla CC-2).
+
+### Frontera de capa — comprobada, no infringida
+
+`tokens.spec.ts` vive en `infrastructure/` e importa `../../app.config`, que a su vez importa de `ui/`. No es un hueco: `arch-test.mjs` clasifica `app.config.ts` como capa **`root`** (raíz de composición, la decisión del Leader registrada en T-3), y la regla de `infrastructure/` solo prohíbe destino `ui/`. `test:arch` sigue verde. Es además la **única** forma de cumplir §6.3, que exige la configuración real y no una copia.
