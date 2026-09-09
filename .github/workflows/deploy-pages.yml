@@ -1,18 +1,37 @@
 # Despliegue del sitio estático en GitHub Pages.
 #
 # Contrato: docs/infrastructure.md §3 "Deployment Strategy".
-#   - Artefacto: dist/ producido por `ng build --configuration production`
-#   - Disparo: push a la rama por defecto
-#   - Verificación previa: compilación limpia + pruebas + `npm audit` sin severidad alta
-#   - Fallback de rutas: la SPA usa History API, así que 404.html debe ser copia de
-#     index.html. Sin eso, recargar /laboratorio devuelve 404 — la única sorpresa de
-#     infraestructura que este sistema puede dar.
 #
-# La compuerta corre el contrato de verificación completo del proyecto: las pruebas,
-# la prueba de arquitectura y el lint, todos con los scripts agent-lean que define
-# `package.json` (creados en T-3 y T-9 del spec 001-setup-bootstrap-angular).
-# `test:agent` es silencioso en verde y verbatim en rojo, que es justo lo que hace
-# legible un log de CI.
+# ESTE WORKFLOW TIENE DOS MODOS, y el modo decide también qué se verifica:
+#
+#   mockup (actual) → publica docs/specs/.../mockup/index.html tal cual.
+#                     No instala Node ni npm: el artefacto es un HTML autocontenido
+#                     y no contiene una línea de la aplicación Angular. Correr la
+#                     suite de la SPA como condición para publicarlo acoplaría dos
+#                     cosas sin relación causal.
+#
+#   app            → compila la SPA con `ng build --configuration production` y
+#                     publica dist/. Aquí sí corre el contrato de verificación
+#                     completo antes de construir: `npm audit --audit-level=high`,
+#                     `npm run test:agent`, `npm run test:arch`, `npm run lint:agent`,
+#                     y el build encadena `tools/bundle-budget.mjs`.
+#
+# Cómo alternar:
+#   - Permanente: cambiar `PAGINA_POR_DEFECTO` abajo. Es la única línea.
+#   - Una sola ejecución de prueba: lanzar el workflow a mano (workflow_dispatch)
+#     y elegir el modo en el desplegable, sin tocar el archivo.
+#
+# ⚠ BLOQUEADOR CONOCIDO DEL MODO `app` (2026-09-09): `npm ci` falla en el runner con
+#   «Missing: @emnapi/core@1.11.3 from lock file». Causa diagnosticada: el paquete
+#   dev y opcional `@napi-rs/wasm-runtime` (package-lock.json:2849) declara
+#   peerDependencies sobre `@emnapi/core` y `@emnapi/runtime`; el lock se generó en
+#   macOS/arm64, donde npm no las resuelve, y en linux/x64 sí las exige. Regenerar
+#   el lock con `--package-lock-only`, con `--os=linux --cpu=x64`, no lo corrige.
+#   Evidencia: run 34310801442. Hay que resolverlo ANTES de pasar a modo `app`.
+#
+# Fallback de rutas: la SPA usa rutas de History API, así que 404.html debe ser copia
+# de index.html. Sin eso, recargar /laboratorio devuelve 404 — la única sorpresa de
+# infraestructura que este sistema puede dar.
 
 name: Desplegar en GitHub Pages
 
@@ -20,6 +39,29 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      pagina:
+        description: 'Qué publicar en esta ejecución'
+        type: choice
+        options:
+          - mockup
+          - app
+        default: mockup
+
+env:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # QUÉ SE PUBLICA en un push a main. Es la única línea que hay que cambiar.
+  #
+  # Hoy vale `mockup` porque la aplicación real todavía tiene páginas placeholder:
+  # publicarla no mostraría nada. El prototipo sí implementa las fórmulas F1–F8 en
+  # vivo, así que sirve para mostrar y para validar el modelo numéricamente.
+  # ─────────────────────────────────────────────────────────────────────────────
+  PAGINA_POR_DEFECTO: mockup
+
+  # Origen del prototipo. Vive dentro del spec porque es su referencia visual
+  # aprobada (002-.../01-dominio-modelo-funcional → Visual Reference); el
+  # despliegue lo copia, nunca lo edita.
+  RUTA_MOCKUP: docs/specs/002-feature-experiencia-variacion-cpu/mockup
 
 permissions:
   contents: read
@@ -40,26 +82,58 @@ jobs:
       - name: Descargar el repositorio
         uses: actions/checkout@v4
 
+      - name: Resolver el modo
+        # En un push, `inputs.pagina` viene vacío y cae al valor por defecto.
+        # Se escribe en GITHUB_ENV para que los pasos siguientes puedan usarlo
+        # tanto en `if:` como dentro del shell.
+        run: |
+          set -euo pipefail
+          MODO="${{ inputs.pagina || env.PAGINA_POR_DEFECTO }}"
+          case "$MODO" in
+            app|mockup) ;;
+            *) echo "PAGINA debe ser 'app' o 'mockup'; llegó: '$MODO'"; exit 1 ;;
+          esac
+          echo "PAGINA=$MODO" >> "$GITHUB_ENV"
+          echo "Modo de publicación: $MODO"
+
+      # ── Verificación y compilación: solo en modo `app` ────────────────────────
+
       - name: Preparar Node
+        if: env.PAGINA == 'app'
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
           cache: npm
 
       - name: Instalar dependencias
+        if: env.PAGINA == 'app'
         run: npm ci
 
       - name: Auditoría de dependencias
+        if: env.PAGINA == 'app'
         run: npm audit --audit-level=high
 
       - name: Pruebas
+        if: env.PAGINA == 'app'
         run: npm run test:agent
 
       - name: Prueba de arquitectura
+        if: env.PAGINA == 'app'
         run: npm run test:arch
 
       - name: Lint
+        if: env.PAGINA == 'app'
         run: npm run lint:agent
+
+      - name: Compilar producción
+        if: env.PAGINA == 'app'
+        # base-href tiene que ser /<repo>/ porque esto es una project page
+        # (jaimeen234-cpu.github.io/variacion-y-cambio/), no una user page.
+        # Se toma de la variable del propio runner para que un fork o un renombrado
+        # del repositorio no rompa el despliegue en silencio.
+        run: npx ng build --configuration production --base-href "/${GITHUB_REPOSITORY#*/}/" && node tools/bundle-budget.mjs
+
+      # ── Publicación: común a los dos modos ───────────────────────────────────
 
       - name: Configurar Pages
         id: pages
@@ -67,28 +141,40 @@ jobs:
         with:
           # Habilita Pages en el repositorio si aún no lo está. Es la vía que no
           # exige permiso de administrador para una persona: actúa el GITHUB_TOKEN
-          # del workflow, con el `pages: write` declarado arriba.
+          # del workflow, con el `pages: write` declarado arriba. Redundante desde
+          # que el origen de Pages se puso a mano en «GitHub Actions», pero
+          # inofensiva y útil si alguien clona el repositorio.
           enablement: true
 
-      - name: Compilar producción
-        # base-href tiene que ser /<repo>/ porque esto es una project page
-        # (jaimeen234-cpu.github.io/variacion-y-cambio/), no una user page.
-        # Se toma de la variable del propio runner para que un fork o un renombrado
-        # del repositorio no rompa el despliegue en silencio.
-        run: npx ng build --configuration production --base-href "/${GITHUB_REPOSITORY#*/}/" && node tools/bundle-budget.mjs
-
-      - name: Fallback de rutas y desactivar Jekyll
+      - name: Preparar el sitio
+        # Deja el directorio a publicar en `sitio/`, venga de donde venga. Un solo
+        # sitio de subida evita que el interruptor de modo tenga que tocar también
+        # el paso de artefacto.
         run: |
           set -euo pipefail
-          SALIDA=dist/variacion-y-cambio/browser
-          test -f "$SALIDA/index.html" || { echo "No existe $SALIDA/index.html"; exit 1; }
-          cp "$SALIDA/index.html" "$SALIDA/404.html"
-          touch "$SALIDA/.nojekyll"
+          rm -rf sitio && mkdir -p sitio
+          case "$PAGINA" in
+            app)
+              ORIGEN=dist/variacion-y-cambio/browser
+              test -f "$ORIGEN/index.html" || { echo "No existe $ORIGEN/index.html"; exit 1; }
+              cp -R "$ORIGEN/." sitio/
+              ;;
+            mockup)
+              test -f "$RUTA_MOCKUP/index.html" || { echo "No existe $RUTA_MOCKUP/index.html"; exit 1; }
+              cp -R "$RUTA_MOCKUP/." sitio/
+              ;;
+          esac
+          # En modo mockup no hace falta el fallback (es una sola página con anclas),
+          # pero se mantiene para que una URL equivocada muestre la experiencia en
+          # lugar del 404 de GitHub.
+          cp sitio/index.html sitio/404.html
+          touch sitio/.nojekyll
+          echo "Publicando modo '$PAGINA' — $(du -sh sitio | cut -f1), $(find sitio -type f | wc -l | tr -d ' ') archivos"
 
       - name: Subir el artefacto
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist/variacion-y-cambio/browser
+          path: sitio
 
   desplegar:
     name: Desplegar

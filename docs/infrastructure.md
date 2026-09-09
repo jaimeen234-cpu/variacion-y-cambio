@@ -45,26 +45,37 @@ No hay entorno de *staging*. Con un artefacto estático, sin base de datos y sin
 
 | Aspecto | Decisión |
 |---|---|
-| Artefacto | `dist/` producido por `ng build --configuration production` |
+| Artefacto | El directorio `sitio/`. Según el modo del workflow: el prototipo estático (`mockup`, **actual**) o el `dist/` producido por `ng build --configuration production` (`app`) |
 | Método | GitHub Actions: en push a la rama por defecto, construir y publicar en GitHub Pages |
 | IaC (Terraform / CDK) | **No.** No hay recursos cloud que provisionar. Un archivo de workflow es toda la infraestructura como código que este sistema tiene |
 | Rollback | Volver a desplegar el commit anterior. Al ser estático, es instantáneo y sin migraciones que revertir |
 | Versionado | El artefacto se corresponde 1:1 con un commit de la rama por defecto |
-| Verificación previa al despliegue | Compilación limpia + suite de pruebas + prueba de arquitectura (TRD §12) + `npm audit` sin severidad alta/crítica (SEC-3) |
+| Verificación previa al despliegue | **Solo en modo `app`:** compilación limpia + suite de pruebas + prueba de arquitectura (TRD §12) + lint + `npm audit` sin severidad alta/crítica (SEC-3). En modo `mockup` no corre ninguna: el artefacto es un HTML autocontenido que no contiene una línea de la SPA, así que sus puertas no dicen nada sobre él |
 
-**Estado del pipeline (2026-09-09):** existe — [`.github/workflows/deploy-pages.yml`](../.github/workflows/deploy-pages.yml). Implementa esta tabla: dispara en `push` a `main` y en `workflow_dispatch`, verifica (`npm audit --audit-level=high` + `npx ng test --watch=false`), compila con `--base-href "/<repo>/"` porque es una *project page*, copia `index.html` a `404.html` por la regla de enrutamiento de abajo, y publica con `actions/deploy-pages`.
+**Estado del pipeline (2026-09-09):** existe — [`.github/workflows/deploy-pages.yml`](../.github/workflows/deploy-pages.yml). Dispara en `push` a `main` y en `workflow_dispatch` (con un desplegable para elegir el modo en una ejecución suelta, sin editar el archivo). Copia `index.html` a `404.html` por la regla de enrutamiento de abajo y publica con `actions/deploy-pages`.
 
-**La compuerta corre el contrato de verificación completo** (actualizado 2026-09-09, al cerrar el spec `001`): `npm audit --audit-level=high` · `npm run test:agent` · `npm run test:arch` · `npm run lint:agent`, y el build encadena `tools/bundle-budget.mjs`. Si cualquiera falla, no despliega.
+### Los dos modos de publicación
 
-Queda **una** cosa pendiente, y no es técnica:
+El workflow lleva un interruptor, `PAGINA_POR_DEFECTO`:
 
-| Falta | Motivo | Estado |
+| Modo | Qué publica | Qué verifica antes | Estado |
+|---|---|---|---|
+| **`mockup`** | `docs/specs/002-feature-experiencia-variacion-cpu/mockup/index.html` tal cual, sin instalar Node ni npm | Nada | ✅ **Activo** |
+| `app` | `dist/` de `ng build --configuration production`, con `--base-href "/<repo>/"` porque es una *project page* | `npm audit --audit-level=high` · `npm run test:agent` · `npm run test:arch` · `npm run lint:agent` · `tools/bundle-budget.mjs`. Si cualquiera falla, no despliega | ⛔ Bloqueado — ver abajo |
+
+**Por qué `mockup` está activo (2026-09-09, decisión del usuario):** las páginas de la SPA son todavía *placeholder*, así que publicarla no mostraría nada. El prototipo implementa las fórmulas F1–F8 en vivo, sirve para mostrar la experiencia y para validar el modelo numéricamente. Se cambia a `app` cuando la aplicación real esté lista.
+
+**Por qué el modo `mockup` no corre las puertas de verificación:** verifican la aplicación Angular. El artefacto del modo `mockup` es un HTML autocontenido que no contiene una línea de ella. Exigir la suite de la SPA para publicar un archivo que no la incluye acopla dos cosas sin relación causal — y era, literalmente, lo que impedía cualquier despliegue. El prototipo **no** se edita nunca desde el despliegue: es la referencia visual aprobada del spec, y tocarlo cambiaría el insumo de diseño de las hijas `02` y `05`.
+
+### Bloqueador del modo `app`
+
+| Falta | Diagnóstico | Estado |
 |---|---|---|
-| Un despliegue real | El remoto está vacío y nunca se ha empujado | Decisión del usuario |
+| `npm ci` falla en el runner: `Missing: @emnapi/core@1.11.3 from lock file` | El paquete dev y opcional `@napi-rs/wasm-runtime` (`package-lock.json:2849`) declara `peerDependencies` sobre `@emnapi/core` y `@emnapi/runtime`. El lock se generó en macOS/arm64, donde npm no las resuelve; en el linux/x64 del runner sí las exige. **Comprobado:** regenerar con `npm install --package-lock-only`, y también con `--os=linux --cpu=x64`, deja el lock byte a byte idéntico — no lo corrige. Evidencia: run [`34310801442`](https://github.com/jaimeen234-cpu/variacion-y-cambio/actions/runs/34310801442) | ⛔ Abierto. Hay que resolverlo **antes** de pasar a modo `app`. Vías por probar, en orden: `npm ci --legacy-peer-deps` (el fallo es de *peers*, así que es la hipótesis más directa); generar el lock en un contenedor Linux; declarar las tres `@emnapi/*` como `optionalDependencies` explícitas |
 
-**Habilitación de Pages sin permiso de administrador:** el paso `actions/configure-pages@v5` lleva `enablement: true`. Importa porque la cuenta que empuja tiene `push` pero **no `admin`** sobre `jaimeen234-cpu/variacion-y-cambio`: quien habilita Pages es el `GITHUB_TOKEN` del workflow con el `pages: write` declarado, no la persona.
+**Habilitación de Pages:** el origen de Pages está puesto a mano en **«GitHub Actions»** (confirmado por el usuario, 2026-09-09), que es lo que este workflow requiere. El paso `actions/configure-pages@v5` conserva `enablement: true` como red de seguridad redundante: importa si alguien clona el repositorio, porque la cuenta que empuja tiene `push` pero **no `admin`** sobre `jaimeen234-cpu/variacion-y-cambio` — quien habilitaría Pages es el `GITHUB_TOKEN` del workflow con el `pages: write` declarado, no la persona.
 
-**Regla de enrutamiento:** la SPA usa rutas de History API, así que el hosting debe hacer *fallback* de rutas desconocidas a `index.html` (en GitHub Pages, copiar `index.html` como `404.html`). Sin eso, recargar `/lazo-termico` devuelve un 404 — y esa es la única sorpresa de infraestructura que este sistema puede dar.
+**Regla de enrutamiento:** la SPA usa rutas de History API, así que el hosting debe hacer *fallback* de rutas desconocidas a `index.html` (en GitHub Pages, copiar `index.html` como `404.html`). Sin eso, recargar `/laboratorio` devuelve un 404 — y esa es la única sorpresa de infraestructura que este sistema puede dar. *(La ruta real es `/laboratorio`; `/lazo-termico` es un nombre que el TRD todavía arrastra y que no existe en `src/app/app.routes.ts`.)*
 
 ---
 
