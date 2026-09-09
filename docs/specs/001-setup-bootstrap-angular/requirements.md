@@ -153,7 +153,7 @@ El sistema **DEBE** definir los tokens de diseño en un único archivo, con los 
 
 - **RF-5.1** — DADO `src/app/ui/styles/_tokens.scss`, CUANDO se inspecciona, ENTONCES declara todos los tokens del catálogo de `design.md` §7 (color, gradientes, tipografía, espaciado, radio, sombra, movimiento, breakpoints) como variables CSS en `:root`.
 - **RF-5.2** — DADOS los tokens de acento y gradiente, CUANDO se comparan con el SCSS de BLK, ENTONCES coinciden exactamente con los valores publicados, **Y DEBE** quedar registrada en `design.md` §7 la procedencia de cada valor.
-- **RF-5.3** — DADO cualquier archivo del proyecto que no sea `_tokens.scss`, CUANDO se inspecciona, ENTONCES no contiene valores de color literales (hexadecimal, `rgb()`, `hsl()`), **PERO** se permite `transparent`, `currentColor` e `inherit`.
+- **RF-5.3** — DADO cualquier archivo del proyecto que no sea `_tokens.scss` ni archivos de prueba unitaria (`*.spec.ts` — enmienda D-3 para aserciones de valores de tokens), CUANDO se inspecciona, ENTONCES no contiene valores de color literales (hexadecimal, `rgb()`, `hsl()`), **PERO** se permite `transparent`, `currentColor` e `inherit`.
 - **RF-5.4** — DADA una discrepancia entre `design.md` §7 y el SCSS real de BLK, CUANDO se detecta, ENTONCES se corrige `design.md` **y se registra la decisión con su motivo**, en lugar de ajustar silenciosamente uno de los dos.
 
 ### RF-6 — La tabla de rutas está completa desde el inicio
@@ -224,7 +224,7 @@ Formato de escenario de seis partes, heredando las medidas del TRD.
 | **RNF-3** | Cadena de suministro → introduce una vulnerabilidad conocida sobre las dependencias ⇒ se detecta antes de continuar **medido por `npm audit --audit-level=high` sin hallazgos altos ni críticos** | TRD SEC-3 |
 | **RNF-4** | Agente → sigue el contrato de entorno local sobre un repositorio recién clonado ⇒ levanta la aplicación **medido por 0 pasos no documentados en `docs/infrastructure.md` §6** | Infra §6 |
 | **RNF-5** | Desarrollador → clona el repositorio en otra máquina sobre Node ≥ 20 ⇒ `npm ci` instala de forma reproducible **medido por `package-lock.json` versionado y build verde** | TRD TA-6 |
-| **RNF-6** | Reviewer → audita el diff sobre el proyecto nuevo ⇒ toda dependencia de runtime tiene licencia permisiva **medido por 0 dependencias fuera de MIT / Apache-2.0 / BSD / ISC** | PRD C1, TRD TC-1 |
+| **RNF-6** | Reviewer → audita el diff sobre el proyecto nuevo ⇒ toda dependencia de runtime tiene licencia permisiva **medido por 0 dependencias fuera de MIT / Apache-2.0 / BSD / ISC / OFL-1.1** (esta última para tipografías empaquetadas `@fontsource`) | PRD C1, TRD TC-1 |
 
 ---
 

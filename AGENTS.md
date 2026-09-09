@@ -60,7 +60,7 @@ Reglas derivadas de uso diario:
 - `signal` / `computed` viven **solo en `ui/`** (TRD ADR-006).
 - Chart.js se importa en **un único archivo**: `ui/shared/vc-time-chart` (TRD ADR-004).
 - Todo componente es standalone y `OnPush`, sin excepción.
-- Cero valores hexadecimales sueltos: los colores salen de los tokens de `docs/ux-ui/design.md` §7.
+- Cero valores hexadecimales sueltos: los colores salen de los tokens de `docs/ux-ui/design.md` §7 (excepción enmienda D-3: archivos `*.spec.ts` que prueban valores de tokens).
 
 ---
 
@@ -77,8 +77,6 @@ Variante **agent-lean**: silenciosa en verde, **completa y verbatim en rojo**. U
 | Compilación de producción | `npm run build` |
 | Auditoría de dependencias | `npm audit --audit-level=high` |
 | Arrancar en local | `npm start` → `http://localhost:4200` |
-
-> ⚠️ **Estado:** estos scripts **aún no existen** — el proyecto Angular todavía no ha sido creado. El spec de bootstrap (`001-setup-…`) debe crearlos con exactamente estos nombres, y actualizar esta tabla si algún comando real difiere. Hasta entonces, un agente que necesite verificar algo lo declara como no verificable en lugar de inventar un comando.
 
 Para arrancar el entorno local, consulta el contrato de [`docs/infrastructure.md` §6](docs/infrastructure.md) — no adivines comandos.
 
@@ -205,10 +203,9 @@ Skills dependientes del stack que aplican a este proyecto. Las skills `core` y `
 
 ## CodeGraph
 
-**Estado: no inicializado.** El CLI está instalado (`codegraph`), pero no hay código que indexar todavía.
-
-Una vez exista el primer código (tras el spec de bootstrap), ejecuta `codegraph init -i` y, a partir de ahí:
-- Usa CodeGraph **antes** que `grep`/`find` para localizar símbolos, entender llamadas y medir el radio de impacto.
+**Estado: código base disponible para inicializar.** El proyecto Angular y la arquitectura hexagonal ya están creados (`src/app/`). Para habilitar el grafo en este checkout:
+- Ejecuta `codegraph init -i` para generar la base de conocimiento inicial.
+- A partir de ahí, usa CodeGraph **antes** que `grep`/`find` para localizar símbolos, entender llamadas y medir el radio de impacto.
 - Las búsquedas en el grafo **no cuentan** para el umbral de "4+ archivos" que obliga a delegar en un scout.
 - El grafo indexa la última re-indexación: para archivos ya tocados en el spec en curso, lee el árbol de trabajo.
 - No versiones las bases de datos generadas; solo `.codegraph/config.json` si resulta útil.
@@ -238,7 +235,7 @@ Español para documentación, nombres de dominio, textos de interfaz y mensajes 
 
 ### Licencias
 
-Cero dependencias de pago, cero versiones PRO, cero servicios con cuota (PRD C1). Toda dependencia nueva debe ser MIT, Apache-2.0 o BSD, y justificarse contra el presupuesto de bundle (TRD PERF-3). El repositorio **no lleva archivo de licencia**: es un trabajo académico.
+Cero dependencias de pago, cero versiones PRO, cero servicios con cuota (PRD C1). Toda dependencia nueva debe ser MIT, Apache-2.0, BSD o SIL Open Font License 1.1 (OFL-1.1 para tipografías empaquetadas `@fontsource`), y justificarse contra el presupuesto de bundle (TRD PERF-3). El repositorio **no lleva archivo de licencia**: es un trabajo académico.
 
 ---
 

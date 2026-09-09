@@ -324,7 +324,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
 
 ---
 
-### [ ] T-10 — Sincronizar la constitución con la realidad
+### [x] T-10 — Sincronizar la constitución con la realidad
 
 - **Capa:** `docs/`, guías raíz
 - **Depende de:** T-3, T-4, T-9

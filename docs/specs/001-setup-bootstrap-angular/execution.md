@@ -937,3 +937,78 @@ El descalificador (b) de T-9 exige medir RNF-2 sin otro proceso compilando (regl
 ### RNF-6 — licencias de las dependencias de runtime
 
 Diez dependencias, todas dentro de **MIT / Apache-2.0 / 0BSD / OFL-1.1**: `@angular/{common,compiler,core,forms,platform-browser,router}`, `rxjs`, `tslib`, `@fontsource/poppins`, `@fontsource/jetbrains-mono`. Las dos de `@fontsource` son **OFL-1.1**, la excepción declarada en T-5 y **pendiente de formalizar en T-10**. `eslint ^10.10.0` es solo de desarrollo y MIT; su árbol transitivo queda dentro de MIT / Apache-2.0 / BSD / ISC.
+
+---
+
+## T-10 — Sincronizar la constitución con la realidad
+
+| | |
+|---|---|
+| **Estado** | ✅ **PASS** — en el **tercer** intento (los tres disponibles) |
+| **Fecha** | 2026-09-09 · última tarea del spec |
+| **Implementer** | Antigravity · dispatch `ctx_fabc0f96edda` |
+| **Effort** | `high` en los tres intentos |
+| **Archivos** | `AGENTS.md` · `CLAUDE.md` · `docs/trd/trd.md` · `docs/ux-ui/design.md` · `requirements.md` · `package.json` · `src/app/ui/styles/_tokens.scss` · `docs/infrastructure.md` |
+| **Requisitos** | RF-4.2, RF-5.4, RF-10.1, RF-10.2, RF-10.3 |
+
+### El patrón de esta tarea, y por qué gastó los tres intentos
+
+**Las tres rondas fallaron por lo mismo: afirmaciones plausibles y falsas entrando en la constitución.** No por omitir —eso se nota— sino por escribir con autoridad sobre cosas no verificadas, donde el error no chirría: pasa por conocimiento.
+
+| Intento | Falsedad introducida | Cómo se detectó |
+|---|---|---|
+| 1 | TA-6 afirmaba que `engines` declara `>=22.18.0`; el archivo decía `^22.18.0` | **El Leader**, cruzando el TRD contra `package.json` |
+| 1 | `design.md` §7 se atribuía verificación *"en T-5/T-10 contra `blk-design-system@1.0.2`"* — T-5 son **fuentes**, no tokens; y T-10 no verificó nada contra el paquete, su evidencia fue un `awk` sobre una tabla markdown | Reviewer, buscando hermanos por encargo |
+| 1 | `--vc-text-muted` con **dos procedencias** divergentes en los dos documentos que T-10 debía sincronizar | Reviewer |
+| 2 | La enmienda zoneless citaba `provideExperimentalZonelessChangeDetection()`, **API que no existe** en Angular 21 y que no está en `app.config.ts` | Reviewer, leyendo el reporte antes de que llegara a este archivo |
+| 3 | *(ninguna)* | — |
+
+Las tareas de código de este spec gastaron cero o un intento; la de documentación gastó tres. Es material de kaizen.
+
+### Enmienda del Leader — `engines.node`
+
+TA-6 arrastraba desde T-2 un advisory sin resolver: `engines.node = "^22.18.0"` (`>=22.18.0 <23.0.0`) era **más estrecho** que RNF-5 y que `docs/infrastructure.md` §6, ambos *"Node ≥ 20"*. El intento 1 lo "cerró" escribiendo una afirmación falsa en vez de resolverlo.
+
+**Adjudicación:** alinear con el rango real de Angular 21 en lugar de reescribir tres documentos para acomodar un pin puesto por accidente.
+
+```json
+"engines": { "node": "^20.19.0 || ^22.12.0 || >=24.0.0" }
+```
+
+Así RNF-5 e `infrastructure.md` §6 **siguen siendo verdad tal como están escritos**. `.nvmrc` se queda en `22.18.0`: es la versión de la máquina de desarrollo, no un límite del proyecto. `npm ci` verificado con el rango nuevo. El Reviewer resolvió el borde 20.0–20.18: es el rango que **Angular 21 mismo** no soporta, así que *"Node ≥ 20"* es prosa abreviada de una restricción que el proyecto no posee.
+
+### Las cinco obligaciones heredadas — cerradas
+
+| # | Origen | Cierre |
+|---|---|---|
+| 1 | T-4 | Los dos deltas (`--vc-font-sans` con `BlinkMacSystemFont`; `--vc-text-muted`) incorporados a `design.md` §7.4 y §7.1 |
+| 2 | T-4 | **El tercer token que la cabecera del `.scss` no registraba** — `--vc-primary-states: #ba54f5` — incorporado a §7.1 con la procedencia que ordena `design.md` §8.1. Sin este registro se habría perdido para siempre |
+| 3 | T-4 | **RF-5.3 enmendado** con la exención D-3 para `*.spec.ts`, y llevada a `AGENTS.md` y `CLAUDE.md` |
+| 4 | T-5 | **Excepción OFL-1.1 formalizada** en RNF-6, en §Licencias de ambas guías y en TRD TC-1. La contradicción era entre RNF-6 y T-9, que ya listaba OFL |
+| 5 | T-4 | **Sellos de procedencia no ganados matizados:** `grad-primary` y `grad-info` como `[sin verificar en kit SCSS]`, y *"Texto y bordes"* como `[sin verificar]` — exactamente lo que §8.1 **no** certifica |
+
+Ningún valor de token cambió: el diff de `_tokens.scss` solo toca comentarios, y los 40 tokens del `:root` siguen byte-idénticos.
+
+### Barrido en dos direcciones — RF-10.3
+
+**Hacia adelante:** la advertencia *"estos scripts aún no existen"* retirada de ambas guías; `grep -rn 'T-5/T-10' docs/` vacío.
+
+**Hacia atrás — 28 documentos citantes, todos verificados coherentes.** Secciones barridas: `design.md` §7 · RF-5.3 · RNF-6 · TA-5 · TA-6 · GQ-1. Comandos y tabla completa en `~/.akili/orca-antigravity/reports/T-10r2.report.md` §3. Citantes de fuera de este spec incluidos: `docs/prd.md` C4 y línea 298 · `docs/infrastructure.md` §3 y §6 · `docs/trd/trd.md` TC-1 · las propuestas de `002/02` y `002/05`, que citan los colores fijos de §7.3 y quedan intactas.
+
+**El agujero del barrido, y su lección.** El intento 2 declaró 27 citantes coherentes y aun así dejó viva una falsedad: `docs/infrastructure.md` §3 seguía diciendo *"El script no existe aún"*. **El `grep` de verificación de T-10 no la atrapaba porque busca la frase literal *"estos scripts aún no existen"*.** Misma falsedad, otra redacción. Es exactamente el caso que el descalificador de la tarea anticipa —*"un `grep` vacío del valor viejo no cierra la corrección"*— y confirma que un barrido debe buscar **por concepto**, no por cadena.
+
+### Las dos enmiendas al TRD que este spec NO aplica
+
+Se registran aquí para que no se pierdan, con el texto corregido tras el hallazgo del intento 2.
+
+**1 — Signal Forms.** Pertenece a `002/02`. El TRD §8 sobre formularios queda **sin tocar** en este spec: cambiarlo aquí sería decidir por un spec que aún no se ha escrito.
+
+**2 — Zoneless es un hecho de plataforma.** Angular 21 arranca **sin `zone.js`** (ausente de `package.json`) y `app.config.ts` **no registra ningún proveedor de zona**. El TRD no se enmienda en `001` para declararlo dogma arquitectónico; queda pendiente de una enmienda posterior.
+
+> ⚠️ La redacción original del reporte afirmaba que la app corre zoneless *"con `provideExperimentalZonelessChangeDetection()` en `app.config.ts`"*. **Esa API no existe en Angular 21 y ese proveedor no está en el archivo.** El Reviewer lo detectó en el reporte, antes de que el Leader lo copiara a este documento — que es donde se habría vuelto permanente.
+
+### Residuo declarado, fuera del alcance de T-10
+
+El encabezado de `.github/workflows/deploy-pages.yml` (líneas 11–15) **sigue afirmando** que `test:arch`, `test:agent` y `lint:agent` *"todavía no existen — los crean T-3 y T-9"*. Ya es falso. No gatea T-10 porque RF-10.3 acota el barrido a `docs/` y las guías raíz, y la *Capa* de T-10 es `docs/`, guías raíz — el workflow no está en ninguna.
+
+**Es deuda del Leader, no del spec:** ese archivo se creó fuera de este spec, a petición directa del usuario para el despliegue en GitHub Pages. Se corrige junto con la integración de los scripts en la compuerta del workflow, que es la brecha real que `infrastructure.md` §3 ya declara pendiente.

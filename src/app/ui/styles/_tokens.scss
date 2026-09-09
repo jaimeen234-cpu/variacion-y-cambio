@@ -6,17 +6,19 @@
  * Catálogo completo de tokens del sistema (docs/ux-ui/design.md §7).
  * Único archivo del proyecto que contiene valores de color literales (RF-5.3).
  *
- * PROCEDENCIA ANOTADA POR GRUPO (design.md §8.1 / DD-2):
+ * PROCEDENCIA ANOTADA POR GRUPO (design.md §7 / §8.1 / DD-2):
  *  - Acentos: blk-design-system@1.0.2 -> custom/_variables.scss [Verificado]
  *  - Estados de acento: blk-design-system@1.0.2 -> custom/_variables.scss [Verificado]
- *  - Gradientes: blk-design-system@1.0.2 -> custom/_misc.scss y firma visual BLK [Verificado]
+ *  - Gradientes: --vc-grad-card verificado en custom/_misc.scss [Verificado];
+ *    --vc-grad-primary y --vc-grad-info firma visual BLK [sin verificar en kit SCSS]
+ *  - Texto y bordes: blk-design-system@1.0.2 [sin verificar contra SCSS original], salvo --vc-text-muted que proviene de Mockup validado [Verificado] (no procede de BLK)
  *  - Tipografía: blk-design-system@1.0.2 -> $font-family-base (Poppins) [Verificado]
  *  - Superficies: Black Dashboard (Creative Tim), no kit BLK. Desviación declarada DD-2.
  *  - Espaciado, radio, sombra, movimiento, breakpoints: Propios del proyecto.
  *
- * DELTAS FRENTE A docs/ux-ui/design.md §7 (RF-5.4 — PENDIENTES DE CORRECCIÓN EN T-10):
- *  - --vc-font-sans: incluye 'BlinkMacSystemFont' (presente en el mock mockup/index.html l.25, ausente en §7.4). Motivo: ejemplar validado visualmente por el usuario.
- *  - --vc-text-muted: 'rgba(255, 255, 255, 0.38)' (presente en el mock mockup/index.html l.20, ausente en §7.1). Motivo: ejemplar validado visualmente por el usuario.
+ * SINCRONIZACIÓN CON docs/ux-ui/design.md §7 (RF-5.4 / T-10):
+ *  - --vc-font-sans incorpora 'BlinkMacSystemFont' según mock mockup/index.html.
+ *  - --vc-text-muted (Mockup validado) y --vc-primary-states incorporados en el catálogo de design.md §7.
  *
  * AUSENCIA DELIBERADA DE TEMA CLARO (RF-9.3 / design.md §11):
  * La aplicación es exclusivamente dark-only en v1 (PRD O7). La paleta de BLK
@@ -34,7 +36,7 @@
   --vc-bg-elevated: #2b3553;
 
   /* ---------------------------------------------------------------------------
-   * 2. Acentos (Procedencia: blk-design-system@1.0.2 -> custom/_variables.scss)
+   * 2. Acentos (Procedencia: blk-design-system@1.0.2 -> custom/_variables.scss [Verificado])
    * --------------------------------------------------------------------------- */
   --vc-primary: #e14eca;
   --vc-info: #1d8cf8;
@@ -43,20 +45,22 @@
   --vc-danger: #fd5d93;
 
   /* ---------------------------------------------------------------------------
-   * 3. Estados de acento (Procedencia: blk-design-system@1.0.2 -> custom/_variables.scss)
+   * 3. Estados de acento (Procedencia: blk-design-system@1.0.2 -> custom/_variables.scss [Verificado])
    * --------------------------------------------------------------------------- */
   --vc-primary-states: #ba54f5;
 
   /* ---------------------------------------------------------------------------
-   * 4. Texto y bordes (Procedencia: blk-design-system@1.0.2)
+   * 4. Texto y bordes (Procedencia: blk-design-system@1.0.2 [sin verificar],
+   *    salvo --vc-text-muted [Mockup validado - Verificado, no procede de BLK])
    * --------------------------------------------------------------------------- */
   --vc-text-primary: #ffffff;
   --vc-text-secondary: rgba(255, 255, 255, 0.6);
-  --vc-text-muted: rgba(255, 255, 255, 0.38);
+  --vc-text-muted: rgba(255, 255, 255, 0.38); /* Mockup validado [Verificado] */
   --vc-border: rgba(255, 255, 255, 0.1);
 
   /* ---------------------------------------------------------------------------
-   * 5. Gradientes (Procedencia: BLK Design System -> custom/_misc.scss y firma BLK)
+   * 5. Gradientes (Procedencia: --vc-grad-card [Verificado];
+   *    --vc-grad-primary y --vc-grad-info [sin verificar])
    * --------------------------------------------------------------------------- */
   --vc-grad-primary: linear-gradient(0deg, #ba54f5 0%, #e14eca 100%);
   --vc-grad-info: linear-gradient(0deg, #1d8cf8 0%, #3358f4 100%);

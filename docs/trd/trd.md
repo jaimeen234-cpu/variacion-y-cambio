@@ -538,7 +538,7 @@ Si más adelante se exige medir G1/G5 de verdad, exige servidor y una decisión 
 
 | # | Restricción | Origen |
 |---|---|---|
-| TC-1 | Solo dependencias con licencia permisiva (MIT / Apache-2.0 / BSD). Cero paquetes de pago, cero versiones PRO, cero servicios con cuota | PRD C1 |
+| TC-1 | Solo dependencias con licencia permisiva (MIT / Apache-2.0 / BSD / OFL-1.1 para fuentes `@fontsource`). Cero paquetes de pago, cero versiones PRO, cero servicios con cuota | PRD C1 |
 | TC-2 | Sin backend ni base de datos | PRD C2, ADR-002 |
 | TC-3 | Arquitectura hexagonal obligatoria y **verificada automáticamente** | PRD C3, TEST-2 |
 | TC-4 | Angular + identidad visual BLK free | PRD C4, ADR-003 |
@@ -554,5 +554,5 @@ Si más adelante se exige medir G1/G5 de verdad, exige servidor y una decisión 
 | TA-2 | 600 pasos de simulación cubren todos los horizontes didácticos útiles | Que un escenario requiera más resolución temporal |
 | TA-3 | Chart.js rinde a ≥ 30 fps con ~600 puntos y 4 series en hardware de gama media | Medición real en la primera tarea que lo integre; si falla, aplica el plan B de ADR-004 |
 | TA-4 | El SCSS de BLK free se porta a Angular actual en una tarea acotada | Si el portado desborda, se aplica la alternativa (b) de ADR-003: solo tokens |
-| TA-5 | El runner por defecto del Angular CLI instalado sirve para las pruebas de dominio sin configuración extra | Verificar al crear el proyecto y fijar el comando real en los guías raíz |
-| TA-6 | Node v22.18.0 / npm 11.6.0 del entorno actual son la base de desarrollo | Cambio de máquina o de versión de Angular |
+| TA-5 | El runner por defecto del Angular CLI instalado sirve para las pruebas de dominio sin configuración extra | Resuelto en 001 — Vitest es el runner configurado y verificado (`npm run test:agent`), con soporte para filtro por archivo |
+| TA-6 | Node v22.18.0 / npm 11.6.0 del entorno actual son la base de desarrollo | Fijado en 001 — `.nvmrc` fija `22.18.0` y `engines.node` en `package.json` declara `^20.19.0 || ^22.12.0 || >=24.0.0` |

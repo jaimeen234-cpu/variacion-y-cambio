@@ -164,31 +164,33 @@ Columna única, `max-width: 68ch`, tarjetas BLK para separar conceptos.
 
 ## 7. Design Tokens
 
-> **Origen:** portados del SCSS de **BLK Design System (free, MIT)**. Los valores hex de esta tabla son la base declarada del sistema; la tarea de portado del primer spec debe **verificarlos contra el SCSS real** y corregir esta tabla si difieren — la tabla es la fuente de verdad a partir de ese momento.
+> **Origen y procedencia:** portados del SCSS de **BLK Design System (free, MIT)** y verificados en la fase de diseño (DD-2) y en T-4. Acentos, estados de acento, gradiente de tarjeta y tipografía verificados; el resto según la columna Procedencia. Los valores hex de esta sección son la **fuente de verdad** sincronizada con `src/app/ui/styles/_tokens.scss`: ningún componente ni vista inventa un valor que no esté aquí.
 
 ### 7.1 Color
 
-| Token | Valor | Uso |
-|---|---|---|
-| `--vc-bg-base` | `#1e1e2f` | Fondo de la aplicación |
-| `--vc-bg-surface` | `#27293d` | Tarjetas, paneles |
-| `--vc-bg-elevated` | `#2b3553` | Popovers, dropdowns, modales |
-| `--vc-primary` | `#e14eca` | Acción principal, marca |
-| `--vc-info` | `#1d8cf8` | Serie de datos "potencia", enlaces |
-| `--vc-success` | `#00f2c3` | Estado nominal, ahorro |
-| `--vc-warning` | `#ff8d72` | Cercanía al umbral térmico |
-| `--vc-danger` | `#fd5d93` | Throttling activo, valor inválido |
-| `--vc-text-primary` | `#ffffff` | Texto principal |
-| `--vc-text-secondary` | `rgba(255,255,255,.6)` | Texto de apoyo, unidades |
-| `--vc-border` | `rgba(255,255,255,.1)` | Bordes de tarjeta y separadores |
+| Token | Valor | Uso | Procedencia |
+|---|---|---|---|
+| `--vc-bg-base` | `#1e1e2f` | Fondo de la aplicación | Black Dashboard (Creative Tim) [DD-2] |
+| `--vc-bg-surface` | `#27293d` | Tarjetas, paneles | Black Dashboard (Creative Tim) [DD-2] |
+| `--vc-bg-elevated` | `#2b3553` | Popovers, dropdowns, modales | Black Dashboard (Creative Tim) [DD-2] |
+| `--vc-primary` | `#e14eca` | Acción principal, marca | `custom/_variables.scss` [Verificado] |
+| `--vc-primary-states` | `#ba54f5` | Hover, active y foco del primario | `custom/_variables.scss` [Verificado] |
+| `--vc-info` | `#1d8cf8` | Serie de datos "potencia", enlaces | `custom/_variables.scss` [Verificado] |
+| `--vc-success` | `#00f2c3` | Estado nominal, ahorro | `custom/_variables.scss` [Verificado] |
+| `--vc-warning` | `#ff8d72` | Cercanía al umbral térmico | `custom/_variables.scss` [Verificado] |
+| `--vc-danger` | `#fd5d93` | Throttling activo, valor inválido | `custom/_variables.scss` [Verificado] |
+| `--vc-text-primary` | `#ffffff` | Texto principal | `blk-design-system` [sin verificar] |
+| `--vc-text-secondary` | `rgba(255, 255, 255, 0.6)` | Texto de apoyo, unidades | `blk-design-system` [sin verificar] |
+| `--vc-text-muted` | `rgba(255, 255, 255, 0.38)` | Texto terciario, leyendas bajas | Mockup validado [Verificado] |
+| `--vc-border` | `rgba(255, 255, 255, 0.1)` | Bordes de tarjeta y separadores | `blk-design-system` [sin verificar] |
 
 ### 7.2 Gradientes *(firma visual de BLK)*
 
-| Token | Valor |
-|---|---|
-| `--vc-grad-primary` | `linear-gradient(0deg, #ba54f5 0%, #e14eca 100%)` |
-| `--vc-grad-info` | `linear-gradient(0deg, #1d8cf8 0%, #3358f4 100%)` |
-| `--vc-grad-card` | `linear-gradient(0deg, #1e1e2f 0%, #1e1e24 100%)` |
+| Token | Valor | Procedencia |
+|---|---|---|
+| `--vc-grad-primary` | `linear-gradient(0deg, #ba54f5 0%, #e14eca 100%)` | Firma visual BLK [sin verificar en kit SCSS] |
+| `--vc-grad-info` | `linear-gradient(0deg, #1d8cf8 0%, #3358f4 100%)` | Firma visual BLK [sin verificar en kit SCSS] |
+| `--vc-grad-card` | `linear-gradient(0deg, #1e1e2f 0%, #1e1e24 100%)` | `custom/_misc.scss` [Verificado] |
 
 ### 7.3 Semántica de series *(regla dura del producto)*
 
@@ -205,7 +207,7 @@ Cada magnitud tiene **un solo color en toda la app**. Un color de serie nunca se
 
 | Token | Valor |
 |---|---|
-| `--vc-font-sans` | `'Poppins', -apple-system, 'Segoe UI', Roboto, sans-serif` |
+| `--vc-font-sans` | `'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif` |
 | `--vc-font-mono` | `'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace` |
 | `--vc-fs-display` | `clamp(2rem, 4vw, 3.25rem)` / 700 |
 | `--vc-fs-h1` | `clamp(1.6rem, 3vw, 2.25rem)` / 600 |
@@ -322,7 +324,7 @@ Consecuencias que sí se implementan:
 
 | # | Pregunta | Estado |
 |---|---|---|
-| GQ-1 | Los hex exactos del SCSS de BLK free deben verificarse contra la fuente durante la tarea de portado | Abierto — §7 es la fuente de verdad tras verificar |
+| GQ-1 | Los hex exactos del SCSS de BLK free deben verificarse contra la fuente durante la tarea de portado | Resuelto en la fase de diseño (DD-2) y en T-4 — Hex verificados contra blk-design-system@1.0.2 (acentos en _variables.scss, grad-card en _misc.scss); superficies documentadas bajo DD-2 (Black Dashboard); tokens sincronizados en §7 y _tokens.scss |
 | GQ-2 | ¿Librería de gráficas o SVG propio? Decisión técnica con impacto visual | Abierto — se decide en el TRD (ADR-004) |
 | GQ-3 | ¿La app necesita logotipo propio o basta la marca tipográfica "Variación y Cambio"? | Abierto |
 | GQ-4 | ¿Hay guía de identidad institucional que el proyecto deba respetar? | Abierto — depende del documento del curso |

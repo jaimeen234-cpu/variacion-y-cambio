@@ -54,15 +54,15 @@ No hay entorno de *staging*. Con un artefacto estático, sin base de datos y sin
 
 **Estado del pipeline (2026-09-09):** existe — [`.github/workflows/deploy-pages.yml`](../.github/workflows/deploy-pages.yml). Implementa esta tabla: dispara en `push` a `main` y en `workflow_dispatch`, verifica (`npm audit --audit-level=high` + `npx ng test --watch=false`), compila con `--base-href "/<repo>/"` porque es una *project page*, copia `index.html` a `404.html` por la regla de enrutamiento de abajo, y publica con `actions/deploy-pages`.
 
-Tres cosas que el workflow **todavía no** hace, y por qué:
+Tres cosas que el workflow **todavía no** integra, y por qué:
 
-| Falta | Motivo | Se cierra en |
+| Falta | Motivo | Estado |
 |---|---|---|
-| `npm run test:arch` en la compuerta | El script no existe aún | Spec `001`, T-3 (la herramienta) y T-9 (el script npm) |
-| `npm run test:agent` / `lint:agent` | Ídem | Spec `001`, T-9 |
+| `npm run test:arch` en la compuerta | El script ya existe (creado en T-3 y T-9 de spec `001`), pero el workflow aún no lo invoca | Pendiente de añadir al paso de verificación del workflow |
+| `npm run test:agent` / `lint:agent` | Los scripts ya existen (creados en T-9 de spec `001`); el workflow hoy verifica con `npx ng test --watch=false` | Pendiente de actualizar en el workflow |
 | Un despliegue real | El remoto está vacío y nunca se ha empujado | Decisión del usuario, no técnica |
 
-El workflow lo dice en su propio encabezado en lugar de fingir una verificación completa. Cuando T-3 y T-9 aterricen, esas líneas se añaden a la compuerta.
+El workflow lo documenta en su propio encabezado en lugar de fingir una verificación completa. Los scripts existen y están probados en local; su integración en el workflow de GitHub Actions se completará cuando se active el despliegue continuo.
 
 **Habilitación de Pages sin permiso de administrador:** el paso `actions/configure-pages@v5` lleva `enablement: true`. Importa porque la cuenta que empuja tiene `push` pero **no `admin`** sobre `jaimeen234-cpu/variacion-y-cambio`: quien habilita Pages es el `GITHUB_TOKEN` del workflow con el `pages: write` declarado, no la persona.
 
