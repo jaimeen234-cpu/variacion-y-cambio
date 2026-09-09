@@ -307,3 +307,69 @@ Un comando de verificación que no corre no es una compuerta laxa: es **una comp
 ### Nota sobre un riesgo declarado que se materializó de otra forma
 
 `design.md` §12 anticipaba: *"Vitest en Angular 21 con pruebas de dominio en Node podría necesitar configuración de entorno por archivo"*, con la mitigación de declarar el entorno `node` por patrón. El riesgo era el correcto; la **forma** fue otra — no hace falta configurar entornos, hace falta invocar el runner a través del builder, que ya los resuelve. La fila de riesgo no es falsa y se deja como está.
+
+---
+
+## Punto de reanudación — 2026-09-09, tras T-2
+
+Sesión de Claude Code detenida a propósito para que el harness registre los wrappers de agente de `.claude/agents/` (ver desviación **P-3**). Nada quedó a medias: T-1 y T-2 están en `[x]` con PASS registrado y commiteados.
+
+### Estado
+
+| | |
+|---|---|
+| Completadas | **T-1**, **T-2** — commits `7e7f742`, `d30a571` (pivote), `90bc486` |
+| Siguiente elegible | **T-3** — pero **bloqueada por dos decisiones**, ver abajo |
+| Árbol de trabajo | Limpio |
+| Presupuesto | 2 de 10 tareas · 3 rondas de revisión de ~12 · **dentro de lo previsto** |
+
+### Estado de Orca
+
+| | |
+|---|---|
+| Run | `run_5527c98d67f6` |
+| Rebinding tras reiniciar | `orca orchestration run-use --id run_5527c98d67f6 --json` — **obligatorio**: el `coordinator_handle` apunta al terminal de la sesión anterior |
+| Terminal del Implementer | `term_66336f9f-e5a4-4337-9859-b3f0f6ccefa6` (Antigravity vivo, ocioso). Reverificar con `orca terminal list --json` |
+| Tareas restantes | T-3 `task_1efcf5ed1aec` · T-4 `task_85cf5aa57166` · T-5 `task_1164305d8410` · T-6 `task_da4fff33bed5` · T-7 `task_cdea0d39796d` · T-8 `task_fa45cf4a6a3e` · T-9 `task_13b9b96f351d` · T-10 `task_45d7abf2aa9e` |
+| Andamiaje de despacho | `~/.akili/orca-antigravity/` — `dispatch-agy.sh`, `briefs/`, `reports/`, `task-ids.env`. **Fuera del scratchpad de sesión a propósito**, para que sobreviva al reinicio |
+
+Uso: `~/.akili/orca-antigravity/dispatch-agy.sh <task_id> <dispatch_id> <etiqueta> "<skill1,skill2>"`, tras crear el dispatch y depositar `briefs/<etiqueta>.spec.txt`.
+
+### Dos decisiones pendientes que bloquean T-3
+
+Ninguna es opinión del Leader: las dos las levantó el Reviewer con evidencia, y ambas cambian el plan aprobado.
+
+#### D-1 — ¿La tabla §7.1 se implementa como lista blanca o como lista negra?
+
+`design.md` §7.1 da **dos columnas contradictorias** para la misma fila:
+
+| Capa | Permite | Prohíbe |
+|---|---|---|
+| `domain/` | **solo `domain/`** | `@angular/*`, `rxjs`, `chart.js`, `three`, `application/`, `infrastructure/`, `ui/` |
+
+Los `.spec.ts` de `domain/` y `application/` importan `'vitest'`. Bajo *Prohíbe* (lista negra) es **legal**; bajo *Permite* (lista blanca) es **infracción**.
+
+`tools/arch-test.mjs` no se puede escribir sin resolverlo, y equivocarse hace fallar la pasada 1 **por construcción**. Recomendación del Leader: **lista negra**, tratando los especificadores de paquete npm ausentes de *Prohíbe* como permitidos — es lo que dice TRD TEST-2, que enumera una lista cerrada. Requiere fijar la lectura en §7.1 y darle un fixture propio en T-3.
+
+#### D-2 — El DAG ordena T-3 antes de que exista `ui/`
+
+La **pasada 3** de T-3 exige alcanzar *"al menos un archivo de cada capa"* desde `main.ts` (RF-2.2). `src/app/ui/` no existirá hasta **T-6**. Tal como está el grafo (`T-2 → T-3`), la pasada 3 falla por construcción.
+
+Lo mismo afecta a la primera casilla de T-2 (*"las cuatro capas existen"*), que quedó abierta y transferida a T-6.
+
+Opciones:
+
+| # | Opción | Coste |
+|---|---|---|
+| a | **Reordenar T-3 después de T-6** | Retrasa la compuerta de arquitectura hasta media ejecución: cuatro tareas escribirían código sin red |
+| b | **Partir T-3**: pasadas 1 y 2 ahora, pasada 3 como tarea nueva tras T-6 | Mantiene la compuerta temprana. Añade una tarea al presupuesto de 10 |
+| c | Hacer que la pasada 3 exija solo las capas **existentes** y se endurezca sola al aparecer `ui/` | Sin tareas nuevas ni reordenación, pero la compuerta es más débil de lo escrito hasta T-6 |
+
+Recomendación del Leader: **(b)**. La compuerta de arquitectura es el entregable central del spec (G-B) y retrasarla cuatro tareas contradice su propósito; una tarea extra es más barata que cuatro tareas sin red.
+
+### Advisories sin dueño arrastrados hasta aquí
+
+- La invariante *"`RelojFijo` nunca retrocede"* (§5) está implementada pero **sin prueba**, y ninguna tarea la cubre. Candidata a `/akili-test`.
+- Forma del ejemplar de `002/01`: API ISO duplicada, `esIgual()` sin prueba, y `SelloDeTiempoInvalidoError` fuera de `domain/shared/errors/` donde el **TRD §4** lo ubica junto a `RangoInvalidoError`. Decidir **antes** de que `002/01` replique la forma.
+- `engines.node = "^22.18.0"` es más estrecho que `docs/infrastructure.md` §6 y RNF-5 (Node ≥ 20) — material de **T-10 / RF-10.3**.
+- `<html lang="en">` y `<title>VariacionYCambio</title>` contra la regla de idioma — **T-6**; `README.md` en inglés — **T-10**.
