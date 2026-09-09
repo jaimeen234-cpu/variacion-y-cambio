@@ -1,0 +1,1386 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Variación y Cambio — Mock de validación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   TOKENS — portados de BLK Design System (free, MIT)
+   Fuente de verdad: docs/ux-ui/design.md §7
+   ============================================================ */
+:root{
+  --vc-bg-base:#1e1e2f; --vc-bg-surface:#27293d; --vc-bg-elevated:#2b3553;
+  --vc-primary:#e14eca; --vc-info:#1d8cf8; --vc-success:#00f2c3;
+  --vc-warning:#ff8d72; --vc-danger:#fd5d93;
+  --vc-text-primary:#fff; --vc-text-secondary:rgba(255,255,255,.6);
+  --vc-text-muted:rgba(255,255,255,.38);
+  --vc-border:rgba(255,255,255,.1);
+  --vc-grad-primary:linear-gradient(0deg,#ba54f5 0%,#e14eca 100%);
+  --vc-grad-info:linear-gradient(0deg,#1d8cf8 0%,#3358f4 100%);
+  --vc-grad-card:linear-gradient(0deg,#1e1e2f 0%,#1e1e24 100%);
+  --vc-font-sans:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --vc-font-mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  --vc-space-1:4px; --vc-space-2:8px; --vc-space-3:16px; --vc-space-4:24px;
+  --vc-space-5:32px; --vc-space-6:48px;
+  --vc-radius-sm:4px; --vc-radius-md:8px; --vc-radius-lg:12px;
+  --vc-shadow-card:0 1px 20px 0 rgba(0,0,0,.1);
+  --vc-shadow-raised:0 10px 25px 0 rgba(0,0,0,.3);
+  --vc-motion-fast:120ms cubic-bezier(.4,0,.2,1);
+  --vc-motion-base:240ms cubic-bezier(.4,0,.2,1);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; background:var(--vc-bg-base); color:var(--vc-text-primary);
+  font-family:var(--vc-font-sans); font-size:.9375rem; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *{transition-duration:0ms!important;animation-duration:0ms!important}
+}
+h1,h2,h3,h4{margin:0 0 var(--vc-space-3);line-height:1.25;font-weight:600}
+h1{font-size:clamp(1.75rem,4vw,2.75rem);font-weight:700}
+h2{font-size:clamp(1.375rem,2.5vw,1.875rem)}
+h3{font-size:1.125rem}
+h4{font-size:.9375rem}
+p{margin:0 0 var(--vc-space-3);max-width:68ch}
+a{color:var(--vc-info)}
+.mono{font-family:var(--vc-font-mono);font-variant-numeric:tabular-nums}
+.grad-text{background:var(--vc-grad-primary);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.muted{color:var(--vc-text-secondary)}
+.tiny{font-size:.75rem;letter-spacing:.04em}
+.caption{font-size:.6875rem;text-transform:uppercase;letter-spacing:.08em;color:var(--vc-text-secondary);font-weight:600}
+
+/* ---------- Layout ---------- */
+.wrap{max-width:1240px;margin:0 auto;padding:0 var(--vc-space-4)}
+section{padding:var(--vc-space-6) 0;border-bottom:1px solid var(--vc-border)}
+section:last-of-type{border-bottom:none}
+
+/* ---------- Navbar ---------- */
+nav{
+  position:sticky;top:0;z-index:50;background:rgba(30,30,47,.92);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--vc-border);
+}
+nav .wrap{display:flex;align-items:center;gap:var(--vc-space-4);height:60px}
+.brand{font-weight:700;font-size:1.0625rem;letter-spacing:-.01em;white-space:nowrap}
+.navlinks{display:flex;gap:var(--vc-space-1);margin-left:auto;flex-wrap:wrap}
+.navlinks a{
+  color:var(--vc-text-secondary);text-decoration:none;font-size:.8125rem;font-weight:600;
+  padding:8px 12px;border-radius:var(--vc-radius-sm);transition:color var(--vc-motion-fast),background var(--vc-motion-fast);
+}
+.navlinks a:hover{color:#fff;background:rgba(255,255,255,.06)}
+
+/* ---------- Cards ---------- */
+.card{
+  background:var(--vc-bg-surface);border:1px solid var(--vc-border);
+  border-radius:var(--vc-radius-lg);box-shadow:var(--vc-shadow-card);padding:var(--vc-space-4);
+}
+.card.tight{padding:var(--vc-space-3)}
+.card-title{display:flex;align-items:center;gap:var(--vc-space-2);margin-bottom:var(--vc-space-3)}
+.card-title h3,.card-title h4{margin:0}
+
+/* ---------- Badges ---------- */
+.badge{
+  display:inline-flex;align-items:center;gap:6px;font-size:.6875rem;font-weight:600;
+  text-transform:uppercase;letter-spacing:.06em;padding:4px 10px;border-radius:999px;
+  border:1px solid currentColor;
+}
+.badge.info{color:var(--vc-info)} .badge.success{color:var(--vc-success)}
+.badge.warning{color:var(--vc-warning)} .badge.danger{color:var(--vc-danger)}
+.badge.primary{color:var(--vc-primary)}
+.badge.solid{background:var(--vc-grad-primary);color:#fff;border-color:transparent}
+
+/* ---------- Hero ---------- */
+.hero{padding:var(--vc-space-6) 0 var(--vc-space-5)}
+.hero-badges{display:flex;gap:var(--vc-space-2);flex-wrap:wrap;margin-bottom:var(--vc-space-4)}
+.loop{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--vc-space-2);
+  margin:var(--vc-space-4) 0;
+}
+.loop-step{
+  background:var(--vc-grad-card);border:1px solid var(--vc-border);border-radius:var(--vc-radius-md);
+  padding:var(--vc-space-3);position:relative;
+}
+.loop-step .caption{margin-bottom:6px}
+.loop-step strong{font-size:.9375rem;display:block}
+.loop-step.neg{border-color:rgba(253,93,147,.45)}
+
+/* ---------- Tables ---------- */
+.tablewrap{overflow-x:auto;border-radius:var(--vc-radius-md);border:1px solid var(--vc-border)}
+table{width:100%;border-collapse:collapse;font-size:.8125rem}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--vc-border)}
+th{
+  background:var(--vc-bg-elevated);font-size:.6875rem;text-transform:uppercase;
+  letter-spacing:.06em;color:var(--vc-text-secondary);font-weight:600;position:sticky;top:0;z-index:1;
+}
+tbody tr:last-child td{border-bottom:none}
+td.num{font-family:var(--vc-font-mono);font-variant-numeric:tabular-nums;text-align:right}
+
+/* ---------- LAB ---------- */
+.lab{display:grid;grid-template-columns:340px 1fr;gap:var(--vc-space-3);align-items:start}
+.lab-main{display:grid;gap:var(--vc-space-3);min-width:0}
+.lab-top{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:var(--vc-space-3)}
+@media (max-width:1100px){
+  .lab{grid-template-columns:1fr}
+  .lab-top{grid-template-columns:1fr}
+}
+
+/* Controles */
+.ctrl{margin-bottom:var(--vc-space-4)}
+.ctrl:last-child{margin-bottom:0}
+.ctrl-head{display:flex;justify-content:space-between;align-items:baseline;gap:var(--vc-space-2);margin-bottom:6px}
+.ctrl-head label{font-size:.8125rem;font-weight:600}
+.ctrl-val{font-family:var(--vc-font-mono);font-variant-numeric:tabular-nums;font-size:.9375rem;font-weight:600;color:var(--vc-primary)}
+.ctrl-dom{font-size:.6875rem;color:var(--vc-text-muted);font-family:var(--vc-font-mono);margin-top:4px}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:3px;
+  background:rgba(255,255,255,.14);outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:50%;
+  background:var(--vc-grad-primary);border:2px solid var(--vc-bg-surface);cursor:pointer;
+  box-shadow:0 2px 8px rgba(225,78,202,.5);
+}
+input[type=range]::-moz-range-thumb{
+  width:18px;height:18px;border-radius:50%;background:#e14eca;border:2px solid var(--vc-bg-surface);cursor:pointer;
+}
+input[type=range]:focus-visible{box-shadow:0 0 0 3px rgba(225,78,202,.4)}
+select,input[type=number]{
+  width:100%;background:var(--vc-bg-elevated);color:#fff;border:1px solid var(--vc-border);
+  border-radius:var(--vc-radius-sm);padding:9px 10px;font-family:var(--vc-font-sans);font-size:.8125rem;cursor:pointer;
+}
+select:focus-visible,input:focus-visible{outline:2px solid var(--vc-primary);outline-offset:1px}
+
+/* Dependientes */
+.dep-note{
+  font-size:.75rem;color:var(--vc-warning);background:rgba(255,141,114,.1);
+  border:1px solid rgba(255,141,114,.3);border-radius:var(--vc-radius-sm);
+  padding:8px 10px;margin-top:var(--vc-space-2);display:none;
+}
+.dep-note.show{display:block}
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--vc-space-2)}
+.metric{
+  background:var(--vc-grad-card);border:1px solid var(--vc-border);border-radius:var(--vc-radius-md);
+  padding:var(--vc-space-3);cursor:pointer;transition:border-color var(--vc-motion-fast),transform var(--vc-motion-fast);
+  position:relative;overflow:hidden;
+}
+.metric:hover{border-color:rgba(255,255,255,.28)}
+.metric::after{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--m,var(--vc-info))}
+.metric .caption{display:block;margin-bottom:4px}
+.metric .v{
+  font-family:var(--vc-font-mono);font-variant-numeric:tabular-nums;font-weight:700;
+  font-size:clamp(1.375rem,2.4vw,1.875rem);line-height:1.1;color:var(--m,var(--vc-info));
+}
+.metric .u{font-size:.75rem;color:var(--vc-text-secondary);font-weight:400;margin-left:3px}
+.metric .fx{font-size:.625rem;color:var(--vc-text-muted);font-family:var(--vc-font-mono);margin-top:4px}
+.metric.locked{cursor:not-allowed}
+
+/* Chart */
+.chart-head{display:flex;flex-wrap:wrap;gap:var(--vc-space-2);align-items:center;margin-bottom:var(--vc-space-3)}
+.fn-tabs{display:flex;gap:4px;background:var(--vc-bg-elevated);padding:4px;border-radius:var(--vc-radius-md);flex-wrap:wrap}
+.fn-tab{
+  border:none;background:transparent;color:var(--vc-text-secondary);font-family:var(--vc-font-sans);
+  font-size:.75rem;font-weight:600;padding:7px 12px;border-radius:var(--vc-radius-sm);cursor:pointer;
+  transition:background var(--vc-motion-fast),color var(--vc-motion-fast);
+}
+.fn-tab:hover{color:#fff}
+.fn-tab[aria-selected=true]{background:var(--vc-grad-primary);color:#fff}
+#chartBox{position:relative;width:100%;height:320px}
+#chart{width:100%;height:100%;display:block;cursor:crosshair;border-radius:var(--vc-radius-md)}
+.legend{display:flex;gap:var(--vc-space-3);flex-wrap:wrap;margin-top:var(--vc-space-2)}
+.lg{display:flex;align-items:center;gap:6px;font-size:.75rem;color:var(--vc-text-secondary)}
+.lg i{width:14px;height:3px;border-radius:2px;display:inline-block}
+.lg.dash i{background:none;border-top:2px dashed var(--vc-warning);height:0}
+
+/* Controles de corrida */
+.simctl{display:flex;gap:var(--vc-space-2);align-items:center;flex-wrap:wrap}
+.btn{
+  border:none;border-radius:var(--vc-radius-md);padding:11px 18px;font-family:var(--vc-font-sans);
+  font-size:.8125rem;font-weight:600;cursor:pointer;min-height:44px;
+  transition:filter var(--vc-motion-fast),background var(--vc-motion-fast);
+  display:inline-flex;align-items:center;gap:8px;
+}
+.btn:hover{filter:brightness(1.12)}
+.btn:focus-visible{outline:2px solid var(--vc-primary);outline-offset:2px}
+.btn-primary{background:var(--vc-grad-primary);color:#fff;box-shadow:0 4px 14px rgba(225,78,202,.35)}
+.btn-ghost{background:rgba(255,255,255,.08);color:#fff;border:1px solid var(--vc-border)}
+.btn-sm{padding:7px 12px;min-height:36px;font-size:.75rem}
+.btn svg{width:14px;height:14px;fill:currentColor}
+
+/* Alerta throttling */
+.alert{
+  display:none;align-items:center;gap:var(--vc-space-2);padding:12px 16px;border-radius:var(--vc-radius-md);
+  background:rgba(253,93,147,.13);border:1px solid rgba(253,93,147,.45);color:var(--vc-danger);
+  font-size:.8125rem;font-weight:600;
+}
+.alert.show{display:flex}
+.alert svg{width:18px;height:18px;fill:currentColor;flex:none}
+
+/* RCP */
+.rcp-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:var(--vc-space-3);align-items:end}
+@media (max-width:700px){.rcp-grid{grid-template-columns:1fr}}
+.rcp-out{
+  background:var(--vc-grad-card);border:1px solid rgba(225,78,202,.4);border-radius:var(--vc-radius-md);
+  padding:var(--vc-space-3);margin-top:var(--vc-space-3);
+}
+.rcp-eq{font-family:var(--vc-font-mono);font-size:.8125rem;color:var(--vc-text-secondary);word-break:break-word}
+.rcp-big{
+  font-family:var(--vc-font-mono);font-variant-numeric:tabular-nums;font-weight:700;
+  font-size:clamp(1.5rem,3vw,2.25rem);color:var(--vc-primary);line-height:1.15;margin-top:6px;
+}
+.rcp-ctx{margin-top:var(--vc-space-2);font-size:.8125rem;color:#fff}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:var(--vc-space-2);margin-top:var(--vc-space-3)}
+@media (max-width:600px){.cmp{grid-template-columns:1fr}}
+.cmp-cell{background:var(--vc-bg-elevated);border-radius:var(--vc-radius-sm);padding:10px 12px;font-size:.75rem}
+.cmp-cell .v{font-family:var(--vc-font-mono);font-weight:700;font-size:1.125rem;color:var(--vc-success);display:block}
+
+/* Cuatro representaciones */
+.reps{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--vc-space-2)}
+@media (max-width:700px){.reps{grid-template-columns:1fr}}
+.rep{
+  background:var(--vc-grad-card);border:1px solid var(--vc-border);border-radius:var(--vc-radius-md);
+  padding:var(--vc-space-3);min-height:120px;
+}
+.rep .caption{color:var(--vc-primary);margin-bottom:8px;display:block}
+.rep-alg{font-family:var(--vc-font-mono);font-size:.75rem;line-height:1.8;word-break:break-word}
+.rep-alg b{color:var(--vc-success);font-weight:600}
+.mini-table{width:100%;font-family:var(--vc-font-mono);font-size:.6875rem;border-collapse:collapse}
+.mini-table td{padding:3px 6px;border:none;border-bottom:1px solid rgba(255,255,255,.06)}
+.mini-table td:last-child{text-align:right}
+
+/* Tabla en vivo */
+.live-head{display:flex;justify-content:space-between;align-items:center;gap:var(--vc-space-2);flex-wrap:wrap;margin-bottom:var(--vc-space-3)}
+#liveScroll{max-height:340px;overflow-y:auto;border-radius:var(--vc-radius-md);border:1px solid var(--vc-border)}
+#liveScroll table th{background:var(--vc-bg-elevated)}
+tr.thr td{background:rgba(253,93,147,.12)}
+tr.sel-a td{box-shadow:inset 3px 0 0 var(--vc-info)}
+tr.sel-b td{box-shadow:inset 3px 0 0 var(--vc-success)}
+#liveScroll tbody tr{cursor:pointer;transition:background var(--vc-motion-fast)}
+#liveScroll tbody tr:hover td{background:rgba(255,255,255,.05)}
+
+/* 3D */
+#cpu3d{width:100%;height:230px;border-radius:var(--vc-radius-md);background:radial-gradient(circle at 50% 40%,#2b3553 0%,#1e1e2f 75%);display:block}
+#cpuFallback{
+  display:none;height:230px;border-radius:var(--vc-radius-md);
+  background:radial-gradient(circle at 50% 40%,#2b3553 0%,#1e1e2f 75%);
+  place-items:center;
+}
+#cpuFallback.show{display:grid}
+.temp-strip{display:flex;align-items:center;gap:var(--vc-space-2);margin-top:var(--vc-space-2);font-size:.6875rem;color:var(--vc-text-secondary)}
+.temp-bar{flex:1;height:6px;border-radius:3px;background:linear-gradient(90deg,#1d8cf8,#00f2c3,#ff8d72,#fd5d93);position:relative}
+.temp-pin{position:absolute;top:-4px;width:3px;height:14px;background:#fff;border-radius:2px;box-shadow:0 0 6px rgba(0,0,0,.6);transition:left var(--vc-motion-base)}
+
+/* Fórmulas */
+.fx-grid{display:grid;gap:var(--vc-space-3)}
+.fx-card{background:var(--vc-bg-surface);border:1px solid var(--vc-border);border-radius:var(--vc-radius-md);padding:var(--vc-space-4)}
+.fx-head{display:flex;align-items:baseline;gap:var(--vc-space-2);flex-wrap:wrap;margin-bottom:var(--vc-space-2)}
+.fx-id{font-family:var(--vc-font-mono);color:var(--vc-primary);font-weight:700;font-size:.8125rem}
+.fx-eq{
+  font-family:var(--vc-font-mono);font-size:1rem;background:var(--vc-bg-base);
+  border-left:3px solid var(--vc-primary);padding:12px 16px;border-radius:var(--vc-radius-sm);
+  margin:var(--vc-space-2) 0;overflow-x:auto;
+}
+.fx-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:var(--vc-space-2);font-size:.75rem;margin-top:var(--vc-space-2)}
+.fx-meta div{color:var(--vc-text-secondary)}
+.fx-meta b{color:#fff;display:block;font-size:.6875rem;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+.ref-list{list-style:none;padding:0;margin:0}
+.ref-list li{padding:12px 0 12px 22px;border-bottom:1px solid var(--vc-border);font-size:.8125rem;text-indent:-22px;color:var(--vc-text-secondary)}
+.ref-list li:last-child{border-bottom:none}
+
+/* Guía */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:var(--vc-space-3)}
+.step{background:var(--vc-bg-surface);border:1px solid var(--vc-border);border-radius:var(--vc-radius-md);padding:var(--vc-space-4);position:relative}
+.step-n{
+  width:32px;height:32px;border-radius:50%;background:var(--vc-grad-primary);color:#fff;
+  display:grid;place-items:center;font-weight:700;font-size:.875rem;margin-bottom:var(--vc-space-2);
+}
+.vartable td:first-child{font-family:var(--vc-font-mono);font-size:.75rem}
+.note{
+  border-left:3px solid var(--vc-info);background:rgba(29,140,248,.08);
+  padding:var(--vc-space-3);border-radius:0 var(--vc-radius-sm) var(--vc-radius-sm) 0;font-size:.8125rem;
+}
+.note.warn{border-left-color:var(--vc-warning);background:rgba(255,141,114,.08)}
+footer{padding:var(--vc-space-5) 0;color:var(--vc-text-muted);font-size:.75rem;text-align:center}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <span class="brand">Variación <span class="grad-text">y Cambio</span></span>
+    <div class="navlinks">
+      <a href="#intro">Introducción</a>
+      <a href="#guia">Cómo se maneja</a>
+      <a href="#lab">Laboratorio</a>
+      <a href="#formulas">Fórmulas</a>
+      <a href="#referencias">Referencias</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ INTRODUCCIÓN ============ -->
+<section id="intro" class="hero">
+  <div class="wrap">
+    <div class="hero-badges">
+      <span class="badge solid">Guía específica N.° 1</span>
+      <span class="badge info">RAA 1 · Identificación e interpretación conceptual</span>
+      <span class="badge success">RAA 2 · Aplicación en contextos reales</span>
+    </div>
+    <h1>Cuando dar más energía<br>deja de dar más rendimiento</h1>
+    <p class="muted" style="font-size:1.0625rem;max-width:64ch">
+      Una función no es una fórmula: es una <b style="color:#fff">relación entre lo que cambiamos y
+      lo que cambia como consecuencia</b>. Vamos a verla en un fenómeno que ya conoces como usuario
+      —un procesador que se calienta y baja de velocidad— y a medir <b style="color:#fff">qué tan
+      rápido</b> cambia, no solo <b style="color:#fff">cuánto</b>.
+    </p>
+
+    <div class="loop">
+      <div class="loop-step"><span class="caption">Manipulamos</span><strong>↑ Voltaje</strong><span class="tiny muted">variable independiente</span></div>
+      <div class="loop-step"><span class="caption">Se calcula</span><strong>↑ Potencia</strong><span class="tiny muted">P = α·C·V²·f</span></div>
+      <div class="loop-step"><span class="caption">Se calcula</span><strong>↑ Temperatura</strong><span class="tiny muted">modelo RC</span></div>
+      <div class="loop-step neg"><span class="caption">Realimenta</span><strong>↓ Rendimiento</strong><span class="tiny muted">thermal throttling</span></div>
+    </div>
+
+    <div class="note">
+      <b>El lazo se cierra.</b> El calor no es un efecto secundario que se acumula y ya: <em>vuelve</em>
+      sobre el sistema y lo limita. Por eso el rendimiento no crece sin fin, aunque le sigamos dando
+      energía. Un mejor disipador no “enfría” el procesador — cambia la <em>resistencia térmica</em>,
+      y con ella el punto donde el sistema se autolimita.
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--vc-space-3);margin-top:var(--vc-space-5)">
+      <div class="card tight">
+        <span class="caption">Concepto 1</span>
+        <h4>Variación y cambio</h4>
+        <p class="tiny muted" style="margin:0">Una magnitud toma valores distintos al cambiar otra. El cambio se puede medir, tabular y graficar.</p>
+      </div>
+      <div class="card tight">
+        <span class="caption">Concepto 2</span>
+        <h4>Función como modelo</h4>
+        <p class="tiny muted" style="margin:0">Una regla que asigna a cada valor de entrada exactamente un valor de salida — y que <em>predice</em> el fenómeno.</p>
+      </div>
+      <div class="card tight">
+        <span class="caption">Concepto 3</span>
+        <h4>Razón de cambio promedio</h4>
+        <p class="tiny muted" style="margin:0">Cuánto cambia la salida por cada unidad de entrada, en un intervalo. Es la pendiente de la recta secante.</p>
+      </div>
+      <div class="card tight">
+        <span class="caption">Concepto 4</span>
+        <h4>Cuatro representaciones</h4>
+        <p class="tiny muted" style="margin:0">Algebraica, tabular, gráfica y contextual. Cuatro formas de mirar <em>la misma</em> función.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ GUÍA DE MANEJO ============ -->
+<section id="guia">
+  <div class="wrap">
+    <span class="caption">Antes de empezar</span>
+    <h2>Cómo se maneja la simulación</h2>
+    <p class="muted">Cuatro momentos. Unos 20 minutos en total, según el tiempo asignado.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">1</div>
+        <h4>Reconoce las variables</h4>
+        <p class="tiny muted" style="margin:0">Mira el panel izquierdo: eso es lo que <b style="color:#fff">tú</b> mueves. Mira las tarjetas de la derecha: eso lo calcula el modelo. Intenta cambiar una de la derecha y observa qué te responde.</p>
+      </div>
+      <div class="step">
+        <div class="step-n">2</div>
+        <h4>Predice antes de mover</h4>
+        <p class="tiny muted" style="margin:0">Di en voz alta qué crees que va a pasar. Después mueve el control. Si te equivocas, ese es el momento útil: pregúntate por qué.</p>
+      </div>
+      <div class="step">
+        <div class="step-n">3</div>
+        <h4>Lee las cuatro representaciones</h4>
+        <p class="tiny muted" style="margin:0">La fórmula, la tabla, la curva y la frase describen lo mismo. Busca el mismo número en las cuatro.</p>
+      </div>
+      <div class="step">
+        <div class="step-n">4</div>
+        <h4>Mide la rapidez</h4>
+        <p class="tiny muted" style="margin:0">Elige dos instantes y calcula la razón de cambio promedio. Repite con otro intervalo: si el valor cambia, la función no es lineal.</p>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:var(--vc-space-3);margin-top:var(--vc-space-4)">
+      <div class="card">
+        <div class="card-title"><span class="badge primary">Independientes</span><h4>Las que puedes mover</h4></div>
+        <div class="tablewrap">
+          <table class="vartable">
+            <tbody>
+              <tr><td>V</td><td class="tiny muted">Voltaje aplicado</td><td class="num">V</td></tr>
+              <tr><td>f_obj</td><td class="tiny muted">Frecuencia objetivo</td><td class="num">GHz</td></tr>
+              <tr><td>α</td><td class="tiny muted">Carga de trabajo</td><td class="num">0–1</td></tr>
+              <tr><td>T_amb</td><td class="tiny muted">Temperatura ambiente</td><td class="num">°C</td></tr>
+              <tr><td>R, C</td><td class="tiny muted">Disipador elegido</td><td class="num">°C/W, J/°C</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="badge warning">Dependientes</span><h4>Las que se calculan solas</h4></div>
+        <div class="tablewrap">
+          <table class="vartable">
+            <tbody>
+              <tr><td>P</td><td class="tiny muted">Potencia disipada</td><td class="num">W</td></tr>
+              <tr><td>T(t)</td><td class="tiny muted">Temperatura del die</td><td class="num">°C</td></tr>
+              <tr><td>f_ef(t)</td><td class="tiny muted">Frecuencia efectiva</td><td class="num">GHz</td></tr>
+              <tr><td>R_rel</td><td class="tiny muted">Rendimiento relativo</td><td class="num">%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="tiny" style="margin:var(--vc-space-2) 0 0;color:var(--vc-warning)">
+          No tienen control porque no son entradas: son la <em>salida</em> de la función.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LABORATORIO ============ -->
+<section id="lab">
+  <div class="wrap">
+    <span class="caption">Experiencia</span>
+    <h2>Laboratorio en vivo</h2>
+    <p class="muted">La tabla y la gráfica avanzan <b style="color:#fff">una fila por segundo</b>. Pulsa una fila para marcar t₁, otra para t₂.</p>
+
+    <div class="alert" id="thrAlert" role="status" aria-live="polite">
+      <svg viewBox="0 0 24 24"><path d="M12 2 1 21h22L12 2zm0 6 6.5 11h-13L12 8zm-1 3v4h2v-4h-2zm0 5v2h2v-2h-2z"/></svg>
+      <span id="thrText">Throttling activo</span>
+    </div>
+
+    <div class="lab" style="margin-top:var(--vc-space-3)">
+
+      <!-- ---- Panel de controles ---- -->
+      <div class="card">
+        <div class="card-title"><span class="badge primary">Dominio</span><h4>Variables independientes</h4></div>
+
+        <div class="ctrl">
+          <div class="ctrl-head"><label for="cEsc">Escenario</label></div>
+          <select id="cEsc">
+            <option value="0">CPU de escritorio · 6 núcleos</option>
+            <option value="1">CPU de portátil · 4 núcleos</option>
+          </select>
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-head"><label for="cV">Voltaje</label><span class="ctrl-val" id="vV">1.200 V</span></div>
+          <input type="range" id="cV" min="0.80" max="1.50" step="0.01" value="1.20" aria-describedby="dV">
+          <div class="ctrl-dom" id="dV">Dominio: [0.80, 1.50] V</div>
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-head"><label for="cF">Frecuencia objetivo</label><span class="ctrl-val" id="vF">4.00 GHz</span></div>
+          <input type="range" id="cF" min="1.2" max="5.0" step="0.1" value="4.0" aria-describedby="dF">
+          <div class="ctrl-dom" id="dF">Dominio: [1.2, 5.0] GHz</div>
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-head"><label for="cA">Carga de trabajo · α</label><span class="ctrl-val" id="vA">100 %</span></div>
+          <input type="range" id="cA" min="0.1" max="1" step="0.05" value="1" aria-describedby="dA">
+          <div class="ctrl-dom" id="dA">Dominio: [0.1, 1.0] adimensional</div>
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-head"><label for="cT">Temperatura ambiente</label><span class="ctrl-val" id="vT">25 °C</span></div>
+          <input type="range" id="cT" min="10" max="40" step="1" value="25" aria-describedby="dT">
+          <div class="ctrl-dom" id="dT">Dominio: [10, 40] °C</div>
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-head"><label for="cD">Disipador</label></div>
+          <select id="cD">
+            <option value="0">Pasivo sin ventilador · R = 0.95 °C/W</option>
+            <option value="1" selected>Stock del fabricante · R = 0.55 °C/W</option>
+            <option value="2">Torre de aire · R = 0.28 °C/W</option>
+            <option value="3">Refrigeración líquida · R = 0.18 °C/W</option>
+          </select>
+          <div class="ctrl-dom">R = resistencia térmica · C = capacitancia térmica</div>
+        </div>
+
+        <div class="simctl" style="margin-top:var(--vc-space-4)">
+          <button class="btn btn-primary" id="btnPlay">
+            <svg viewBox="0 0 24 24" id="icPlay"><path d="M8 5v14l11-7z"/></svg><span id="txtPlay">Iniciar</span>
+          </button>
+          <button class="btn btn-ghost" id="btnReset">
+            <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg>Reiniciar
+          </button>
+        </div>
+        <div class="ctrl-dom" style="margin-top:var(--vc-space-2)">
+          Cambiar una variable recalcula el <b>futuro</b> de la corrida, nunca el pasado.
+        </div>
+      </div>
+
+      <!-- ---- Zona principal ---- -->
+      <div class="lab-main">
+
+        <div class="lab-top">
+          <!-- Métricas -->
+          <div class="card">
+            <div class="card-title"><span class="badge warning">Rango</span><h4>Variables dependientes</h4>
+              <span class="tiny muted mono" style="margin-left:auto">t = <span id="tNow">0</span> s</span></div>
+            <div class="metrics">
+              <div class="metric locked" style="--m:var(--vc-info)" data-dep="La potencia depende del voltaje, la frecuencia efectiva y la carga: P = α·C·V² · f_ef + P_est">
+                <span class="caption">Potencia</span><div><span class="v" id="mP">0.0</span><span class="u">W</span></div>
+                <div class="fx">P = α·C·V²·f + P_est</div>
+              </div>
+              <div class="metric locked" style="--m:var(--vc-danger)" data-dep="La temperatura depende de la potencia, del disipador (R y C) y del ambiente. No se puede fijar a mano.">
+                <span class="caption">Temperatura</span><div><span class="v" id="mT">25.0</span><span class="u">°C</span></div>
+                <div class="fx">T ← modelo RC</div>
+              </div>
+              <div class="metric locked" style="--m:var(--vc-success)" data-dep="La frecuencia efectiva depende de la temperatura mediante la política de throttling.">
+                <span class="caption">Frec. efectiva</span><div><span class="v" id="mFe">4.00</span><span class="u">GHz</span></div>
+                <div class="fx">f_ef ← throttling</div>
+              </div>
+              <div class="metric locked" style="--m:var(--vc-primary)" data-dep="El rendimiento relativo es el promedio de f_ef dividido por la frecuencia objetivo.">
+                <span class="caption">Rendimiento</span><div><span class="v" id="mR">100</span><span class="u">%</span></div>
+                <div class="fx">R = f̄_ef / f_obj</div>
+              </div>
+            </div>
+            <div class="dep-note" id="depNote" role="status" aria-live="polite"></div>
+          </div>
+
+          <!-- 3D -->
+          <div class="card tight">
+            <div class="card-title"><h4 style="font-size:.875rem">El objeto modelado</h4>
+              <span class="badge info tiny" id="badge3d" style="margin-left:auto">3D</span></div>
+            <canvas id="cpu3d" aria-label="Representación tridimensional del procesador y su disipador, coloreada según la temperatura simulada"></canvas>
+            <div id="cpuFallback" role="img" aria-label="Representación bidimensional del procesador coloreada según la temperatura">
+              <svg width="180" height="150" viewBox="0 0 180 150" aria-hidden="true">
+                <g transform="translate(90,86)">
+                  <polygon points="0,-46 66,-8 0,30 -66,-8" fill="#2b3553" stroke="rgba(255,255,255,.18)"/>
+                  <polygon points="0,-34 46,-8 0,18 -46,-8" id="fbDie" fill="#1d8cf8"/>
+                  <g id="fbFins" opacity=".85"></g>
+                </g>
+              </svg>
+            </div>
+            <div class="temp-strip">
+              <span class="mono">25</span>
+              <div class="temp-bar"><div class="temp-pin" id="tempPin" style="left:0%"></div></div>
+              <span class="mono">110 °C</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gráfica -->
+        <div class="card">
+          <div class="chart-head">
+            <div class="fn-tabs" role="tablist" aria-label="Función activa">
+              <button class="fn-tab" role="tab" aria-selected="true"  data-fn="T">T(t) · Temperatura</button>
+              <button class="fn-tab" role="tab" aria-selected="false" data-fn="P">P(t) · Potencia</button>
+              <button class="fn-tab" role="tab" aria-selected="false" data-fn="F">f_ef(t) · Frecuencia</button>
+            </div>
+            <span class="tiny muted" style="margin-left:auto">Eje Y = función activa · las otras dos, en trazo tenue</span>
+          </div>
+          <div id="chartBox"><canvas id="chart" role="img" aria-describedby="liveScroll"></canvas></div>
+          <div class="legend">
+            <span class="lg"><i style="background:#fd5d93"></i>Temperatura (°C)</span>
+            <span class="lg"><i style="background:#1d8cf8"></i>Potencia (W)</span>
+            <span class="lg"><i style="background:#00f2c3"></i>Frecuencia efectiva (GHz)</span>
+            <span class="lg dash"><i></i>Umbral de throttling</span>
+            <span class="lg"><i style="background:#e14eca"></i>Recta secante</span>
+          </div>
+        </div>
+
+        <!-- RCP -->
+        <div class="card">
+          <div class="card-title"><span class="badge solid">Concepto central</span><h4>Razón de cambio promedio</h4></div>
+          <div class="rcp-grid">
+            <div>
+              <div class="ctrl-head"><label for="cT1">Instante t₁</label><span class="ctrl-val mono" id="vT1">0 s</span></div>
+              <input type="range" id="cT1" min="0" max="1" step="1" value="0">
+            </div>
+            <div>
+              <div class="ctrl-head"><label for="cT2">Instante t₂</label><span class="ctrl-val mono" id="vT2">0 s</span></div>
+              <input type="range" id="cT2" min="0" max="1" step="1" value="0">
+            </div>
+            <button class="btn btn-ghost btn-sm" id="btnCmp">Comparar dos intervalos</button>
+          </div>
+
+          <div class="rcp-out">
+            <div class="rcp-eq" id="rcpEq">Selecciona dos instantes para calcular la razón de cambio promedio.</div>
+            <div class="rcp-big" id="rcpVal">—</div>
+            <div class="rcp-ctx muted" id="rcpCtx"></div>
+          </div>
+
+          <div class="cmp" id="cmpBox" style="display:none">
+            <div class="cmp-cell"><span class="caption">Primera mitad del intervalo</span><span class="v" id="cmpA">—</span><span class="muted" id="cmpAl"></span></div>
+            <div class="cmp-cell"><span class="caption">Segunda mitad del intervalo</span><span class="v" id="cmpB">—</span><span class="muted" id="cmpBl"></span></div>
+            <div class="cmp-cell" style="grid-column:1/-1;background:rgba(225,78,202,.1)">
+              <span id="cmpVerdict" class="tiny"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cuatro representaciones -->
+        <div class="card">
+          <div class="card-title"><span class="badge primary">Una sola función</span><h4>Cuatro representaciones de <span id="repFn" class="mono">T(t)</span></h4></div>
+          <div class="reps">
+            <div class="rep">
+              <span class="caption">1 · Algebraica</span>
+              <div class="rep-alg" id="repAlg">—</div>
+            </div>
+            <div class="rep">
+              <span class="caption">2 · Tabular</span>
+              <table class="mini-table" id="repTab"><tbody></tbody></table>
+            </div>
+            <div class="rep">
+              <span class="caption">3 · Gráfica</span>
+              <svg id="repGraph" viewBox="0 0 220 90" style="width:100%;height:80px" aria-hidden="true"></svg>
+              <span class="tiny muted" id="repGraphCap"></span>
+            </div>
+            <div class="rep">
+              <span class="caption">4 · Contextual</span>
+              <p class="tiny" style="margin:0" id="repCtx">—</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla en vivo -->
+        <div class="card">
+          <div class="live-head">
+            <div class="card-title" style="margin:0"><h4>Tabla en vivo</h4><span class="badge info" id="rowCount">0 filas</span></div>
+            <label class="tiny muted" style="display:flex;gap:6px;align-items:center;cursor:pointer">
+              <input type="checkbox" id="autoScroll" checked style="width:auto;cursor:pointer"> Seguir la última fila
+            </label>
+          </div>
+          <div id="liveScroll">
+            <table>
+              <thead><tr>
+                <th>t (s)</th><th style="text-align:right">P (W)</th><th style="text-align:right">T (°C)</th>
+                <th style="text-align:right">f_ef (GHz)</th><th style="text-align:right" id="thRcp">ΔT/Δt (°C/s)</th><th>Evento</th>
+              </tr></thead>
+              <tbody id="liveBody"></tbody>
+            </table>
+          </div>
+          <p class="tiny muted" style="margin:var(--vc-space-2) 0 0">
+            La primera fila no tiene razón de cambio: una RCP necesita <b style="color:#fff">dos</b> puntos.
+            Está vacía a propósito — <em>no existe</em> no es lo mismo que <em>cero</em>.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FÓRMULAS ============ -->
+<section id="formulas">
+  <div class="wrap">
+    <span class="caption">Fundamentación matemática</span>
+    <h2>Todas las fórmulas usadas</h2>
+    <p class="muted">Cada ecuación que la simulación evalúa, con sus variables, unidades, dominio, supuestos y referencia.</p>
+    <div class="fx-grid" id="fxGrid"></div>
+
+    <div class="note warn" style="margin-top:var(--vc-space-4)">
+      <b>Alcance matemático deliberado.</b> El rendimiento se calcula como <span class="mono">promedio
+      aritmético</span> de la frecuencia efectiva, y <b>no</b> como <span class="mono">Σ f_ef·Δt</span>.
+      La segunda forma es una suma de Riemann — acumulación —, que corresponde al eje de la
+      <b>Guía 6</b>. La Guía 1 llega hasta la razón de cambio <b>promedio</b>: la recta secante,
+      no la tangente y no el área.
+    </div>
+  </div>
+</section>
+
+<!-- ============ REFERENCIAS ============ -->
+<section id="referencias">
+  <div class="wrap">
+    <span class="caption">APA 7.ª edición</span>
+    <h2>Referencias</h2>
+    <ul class="ref-list">
+      <li>Incropera, F. P., DeWitt, D. P., Bergman, T. L., &amp; Lavine, A. S. (2011). <em>Fundamentals of heat and mass transfer</em> (7.ª ed.). John Wiley &amp; Sons.</li>
+      <li>Rabaey, J. M., Chandrakasan, A., &amp; Nikolić, B. (2003). <em>Digital integrated circuits: A design perspective</em> (2.ª ed.). Prentice Hall.</li>
+      <li>Stewart, J., Redlin, L., &amp; Watson, S. (2012). <em>Precálculo: Matemáticas para el cálculo</em> (6.ª ed.). Cengage Learning.</li>
+      <li>Swokowski, E. W., &amp; Cole, J. A. (2011). <em>Álgebra y trigonometría con geometría analítica</em> (13.ª ed.). Cengage Learning.</li>
+      <li>Weste, N. H. E., &amp; Harris, D. M. (2011). <em>CMOS VLSI design: A circuits and systems perspective</em> (4.ª ed.). Addison-Wesley.</li>
+      <li>Suárez Chávez, S. E. (2026). <em>Guía metodológica general: Laboratorio de Matemáticas II</em> (V3). Institución Universitaria Antonio José Camacho.</li>
+    </ul>
+    <div class="note" style="margin-top:var(--vc-space-4)">
+      Las dos últimas referencias de la lista de <em>Precálculo</em> y <em>Álgebra</em> pertenecen a la
+      bibliografía del propio curso. La razón de cambio promedio y las funciones definidas por tramos
+      se citan desde ahí a propósito: es el material que la asignatura ya reconoce como fuente.
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Mock de validación · <b>Variación y Cambio</b> · spec <span class="mono">002-feature-experiencia-variacion-cpu</span><br>
+    Tokens portados de BLK Design System (free, MIT). En la app real las fuentes van empaquetadas: el aula puede no tener internet.
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+/* ============================================================
+   MODELO — implementa F1..F8 del spec 01-dominio-modelo-funcional
+   ============================================================ */
+const ESCENARIOS = [
+  { nombre:'CPU de escritorio · 6 núcleos',
+    C:15.3e-9, Pest0:12, Vnom:1.20, Vmin:0.80, Vmax:1.50,
+    fbase:1.2, fmax:5.0, Tthr:95, Tcrit:105, dF:0.2, hist:3 },
+  { nombre:'CPU de portátil · 4 núcleos',
+    C:8.2e-9,  Pest0:6,  Vnom:1.05, Vmin:0.70, Vmax:1.30,
+    fbase:0.8, fmax:4.2, Tthr:90, Tcrit:100, dF:0.15, hist:3 }
+];
+const DISIPADORES = [
+  { nombre:'Pasivo sin ventilador', R:0.95, Cth:40  },
+  { nombre:'Stock del fabricante',  R:0.55, Cth:60  },
+  { nombre:'Torre de aire',         R:0.28, Cth:120 },
+  { nombre:'Refrigeración líquida', R:0.18, Cth:200 }
+];
+const DT = 1; // Δt = 1 s  (AC-3.1)
+
+// F1: potencia dinámica  P_din = α·C·V²·f      [W], f en Hz
+const pDin = (a,C,V,fHz) => a * C * V*V * fHz;
+// F2: potencia estática  P_est = P_est0·(V/V_nom)
+const pEst = (P0,V,Vnom) => P0 * (V / Vnom);
+// F3: potencia total
+const pTot = (a,C,V,fGHz,P0,Vnom) => pDin(a,C,V,fGHz*1e9) + pEst(P0,V,Vnom);
+// F4: temperatura, solución exponencial exacta del paso
+const tNext = (Tn,P,R,Cth,Tamb,dt) => {
+  const Tinf = Tamb + P*R;
+  return Tinf + (Tn - Tinf) * Math.exp(-dt/(R*Cth));
+};
+// F5: temperatura de equilibrio
+const tInf = (Tamb,P,R) => Tamb + P*R;
+// F6: throttling — función definida por tramos con histéresis
+function throttle(fEf, T, esc, fObj){
+  if (T > esc.Tthr)                 return Math.max(esc.fbase, +(fEf - esc.dF).toFixed(4));
+  if (T < esc.Tthr - esc.hist)      return Math.min(fObj,      +(fEf + esc.dF).toFixed(4));
+  return fEf;
+}
+// F7: razón de cambio promedio
+const rcp = (fa,fb,a,b) => (b === a) ? null : (fb - fa) / (b - a);
+
+/* ============================================================
+   ESTADO
+   ============================================================ */
+const S = {
+  esc:0, dis:1, V:1.20, fObj:4.0, alpha:1.0, Tamb:25,
+  rows:[], t:0, T:25, fEf:4.0, running:false,
+  fn:'T', selA:null, selB:null, raf:null, nextTick:0
+};
+const FN = {
+  T:{ key:'T', label:'T(t)', unidad:'°C', color:'#fd5d93', nombre:'Temperatura' },
+  P:{ key:'P', label:'P(t)', unidad:'W',  color:'#1d8cf8', nombre:'Potencia' },
+  F:{ key:'F', label:'f_ef(t)', unidad:'GHz', color:'#00f2c3', nombre:'Frecuencia efectiva' }
+};
+const $ = id => document.getElementById(id);
+const esc = () => ESCENARIOS[S.esc];
+const dis = () => DISIPADORES[S.dis];
+const fmt = (n,d=2) => (n===null||n===undefined||Number.isNaN(n)) ? '—' : n.toFixed(d);
+
+/* ============================================================
+   SIMULACIÓN — un paso, determinista
+   ============================================================ */
+function step(){
+  const e = esc(), d = dis();
+  const P = pTot(S.alpha, e.C, S.V, S.fEf, e.Pest0, e.Vnom);
+  const Tn = tNext(S.T, P, d.R, d.Cth, S.Tamb, DT);
+  const fPrev = S.fEf;
+  const fNew  = throttle(S.fEf, Tn, e, S.fObj);
+
+  let evento = '';
+  const eraThr = fPrev < S.fObj - 1e-9;
+  const esThr  = fNew  < S.fObj - 1e-9;
+  if (!eraThr && esThr)      evento = 'THROTTLE_INICIO · T = ' + Tn.toFixed(1) + ' °C > ' + e.Tthr + ' °C';
+  else if (eraThr && !esThr) evento = 'THROTTLE_FIN · T = ' + Tn.toFixed(1) + ' °C';
+  if (Tn > e.Tcrit)          evento = 'TEMP_CRÍTICA · T = ' + Tn.toFixed(1) + ' °C > ' + e.Tcrit + ' °C';
+
+  S.t += DT; S.T = Tn; S.fEf = fNew;
+  const prev = S.rows[S.rows.length-1] || null;
+  const row = {
+    t:S.t, P, T:Tn, F:fNew, evento,
+    thr:esThr,
+    rcpT: prev ? rcp(prev.T, Tn, prev.t, S.t) : null,
+    rcpP: prev ? rcp(prev.P, P,  prev.t, S.t) : null,
+    rcpF: prev ? rcp(prev.F, fNew, prev.t, S.t) : null
+  };
+  S.rows.push(row);
+  return row;
+}
+
+function reset(){
+  cancelAnimationFrame(S.raf);
+  S.running=false; S.rows=[]; S.t=0; S.Tamb=+$('cT').value;
+  S.T=S.Tamb; S.fEf=S.fObj; S.selA=null; S.selB=null;
+  $('liveBody').innerHTML=''; $('cmpBox').style.display='none';
+  $('thrAlert').classList.remove('show');
+  setPlayIcon(false);
+  // fila inicial t = 0
+  S.rows.push({t:0,P:pTot(S.alpha,esc().C,S.V,S.fEf,esc().Pest0,esc().Vnom),T:S.T,F:S.fEf,
+               evento:'inicio',thr:false,rcpT:null,rcpP:null,rcpF:null});
+  renderAll(true);
+}
+
+/* ============================================================
+   BUCLE — cadencia de 1 s corregida por deriva (AC-3.2)
+   ============================================================ */
+function loop(now){
+  if(!S.running) return;
+  if(now >= S.nextTick){
+    step();
+    S.nextTick += 1000;                                  // acumulativo, no now+1000
+    if(now - S.nextTick > 3000) S.nextTick = now + 1000; // recuperación tras pestaña oculta
+    renderAll(false);
+  }
+  S.raf = requestAnimationFrame(loop);
+}
+function play(){
+  if(S.running) return;
+  S.running=true; S.nextTick=performance.now()+1000; setPlayIcon(true);
+  S.raf=requestAnimationFrame(loop);
+}
+function pause(){ S.running=false; cancelAnimationFrame(S.raf); setPlayIcon(false); }
+function setPlayIcon(on){
+  $('icPlay').innerHTML = on ? '<path d="M6 5h4v14H6zm8 0h4v14h-4z"/>' : '<path d="M8 5v14l11-7z"/>';
+  $('txtPlay').textContent = on ? 'Pausar' : (S.rows.length>1 ? 'Continuar' : 'Iniciar');
+}
+
+/* ============================================================
+   GRÁFICA
+   ============================================================ */
+const cv=$('chart'), cx=cv.getContext('2d');
+function chartGeom(){
+  const dpr=window.devicePixelRatio||1, b=cv.getBoundingClientRect();
+  if(cv.width!==Math.round(b.width*dpr)||cv.height!==Math.round(b.height*dpr)){
+    cv.width=Math.round(b.width*dpr); cv.height=Math.round(b.height*dpr);
+  }
+  cx.setTransform(dpr,0,0,dpr,0,0);
+  return {w:b.width,h:b.height,pl:52,pr:14,pt:14,pb:30};
+}
+function drawChart(){
+  const g=chartGeom(); cx.clearRect(0,0,g.w,g.h);
+  const iw=g.w-g.pl-g.pr, ih=g.h-g.pt-g.pb;
+  const rows=S.rows; if(!rows.length) return;
+  const active=FN[S.fn], e=esc();
+
+  const tMax=Math.max(30, rows[rows.length-1].t);
+  const vals=rows.map(r=>r[active.key]);
+  let vMin=Math.min(...vals), vMax=Math.max(...vals);
+  if(S.fn==='T'){ vMin=Math.min(vMin, S.Tamb-2); vMax=Math.max(vMax, e.Tthr+8); }
+  if(S.fn==='F'){ vMin=Math.min(vMin, e.fbase-0.2); vMax=Math.max(vMax, S.fObj+0.3); }
+  if(S.fn==='P'){ vMin=0; vMax=vMax*1.12; }
+  if(vMax-vMin<1e-6) vMax=vMin+1;
+  const pad=(vMax-vMin)*0.08; vMin-=pad; vMax+=pad;
+
+  const X=t=>g.pl+(t/tMax)*iw;
+  const Y=v=>g.pt+ih-((v-vMin)/(vMax-vMin))*ih;
+
+  // rejilla + eje Y de la función activa
+  cx.font='500 10px ui-monospace,monospace'; cx.textBaseline='middle';
+  for(let i=0;i<=4;i++){
+    const y=g.pt+(ih/4)*i, v=vMax-((vMax-vMin)/4)*i;
+    cx.strokeStyle='rgba(255,255,255,.07)'; cx.lineWidth=1;
+    cx.beginPath(); cx.moveTo(g.pl,y); cx.lineTo(g.pl+iw,y); cx.stroke();
+    cx.fillStyle='rgba(255,255,255,.45)'; cx.textAlign='right';
+    cx.fillText(v.toFixed(S.fn==='F'?2:0), g.pl-8, y);
+  }
+  cx.textAlign='center'; cx.textBaseline='top';
+  for(let i=0;i<=5;i++){
+    const t=(tMax/5)*i, x=X(t);
+    cx.fillStyle='rgba(255,255,255,.45)';
+    cx.fillText(Math.round(t)+'s', x, g.pt+ih+8);
+  }
+  cx.save(); cx.translate(12,g.pt+ih/2); cx.rotate(-Math.PI/2);
+  cx.textAlign='center'; cx.textBaseline='middle'; cx.fillStyle=active.color;
+  cx.font='600 10px ui-monospace,monospace';
+  cx.fillText(active.nombre+' ('+active.unidad+')',0,0); cx.restore();
+
+  // series de contexto (normalizadas a su propio rango, trazo tenue)
+  Object.values(FN).filter(f=>f.key!==active.key).forEach(f=>{
+    const vs=rows.map(r=>r[f.key]);
+    let a=Math.min(...vs), b=Math.max(...vs); if(b-a<1e-6) b=a+1;
+    cx.strokeStyle=f.color; cx.globalAlpha=.28; cx.lineWidth=1.5;
+    cx.beginPath();
+    rows.forEach((r,i)=>{
+      const y=g.pt+ih-((r[f.key]-a)/(b-a))*ih;
+      i?cx.lineTo(X(r.t),y):cx.moveTo(X(r.t),y);
+    });
+    cx.stroke(); cx.globalAlpha=1;
+  });
+
+  // umbral (solo con T activa)
+  if(S.fn==='T' && e.Tthr<=vMax && e.Tthr>=vMin){
+    cx.strokeStyle='#ff8d72'; cx.lineWidth=1.5; cx.setLineDash([6,5]);
+    cx.beginPath(); cx.moveTo(g.pl,Y(e.Tthr)); cx.lineTo(g.pl+iw,Y(e.Tthr)); cx.stroke();
+    cx.setLineDash([]);
+    cx.fillStyle='#ff8d72'; cx.font='600 10px ui-monospace,monospace';
+    cx.textAlign='left'; cx.textBaseline='bottom';
+    cx.fillText('T_umbral = '+e.Tthr+' °C', g.pl+6, Y(e.Tthr)-4);
+  }
+
+  // serie activa con relleno
+  const gr=cx.createLinearGradient(0,g.pt,0,g.pt+ih);
+  gr.addColorStop(0,active.color+'44'); gr.addColorStop(1,active.color+'00');
+  cx.beginPath(); cx.moveTo(X(rows[0].t),Y(rows[0][active.key]));
+  rows.forEach(r=>cx.lineTo(X(r.t),Y(r[active.key])));
+  cx.lineTo(X(rows[rows.length-1].t),g.pt+ih); cx.lineTo(X(rows[0].t),g.pt+ih);
+  cx.closePath(); cx.fillStyle=gr; cx.fill();
+
+  cx.beginPath(); cx.strokeStyle=active.color; cx.lineWidth=2.5; cx.lineJoin='round';
+  rows.forEach((r,i)=>{const x=X(r.t),y=Y(r[active.key]); i?cx.lineTo(x,y):cx.moveTo(x,y)});
+  cx.stroke();
+
+  // marcadores de evento
+  rows.forEach(r=>{
+    if(r.evento && r.evento!=='inicio'){
+      const x=X(r.t);
+      cx.strokeStyle='rgba(253,93,147,.55)'; cx.lineWidth=1; cx.setLineDash([3,3]);
+      cx.beginPath(); cx.moveTo(x,g.pt); cx.lineTo(x,g.pt+ih); cx.stroke(); cx.setLineDash([]);
+      cx.fillStyle='#fd5d93'; cx.beginPath(); cx.arc(x,g.pt+6,3.5,0,7); cx.fill();
+    }
+  });
+
+  // recta secante
+  const A=S.rows.find(r=>r.t===S.selA), B=S.rows.find(r=>r.t===S.selB);
+  if(A&&B&&A.t!==B.t){
+    const k=active.key;
+    const x1=X(A.t),y1=Y(A[k]),x2=X(B.t),y2=Y(B[k]);
+    const m=(y2-y1)/(x2-x1);
+    cx.strokeStyle='#e14eca'; cx.lineWidth=2; cx.setLineDash([7,4]);
+    cx.beginPath();
+    cx.moveTo(g.pl,      y1+m*(g.pl-x1));
+    cx.lineTo(g.pl+iw,   y1+m*(g.pl+iw-x1));
+    cx.stroke(); cx.setLineDash([]);
+    [[x1,y1,'#1d8cf8'],[x2,y2,'#00f2c3']].forEach(([x,y,c])=>{
+      cx.fillStyle=c; cx.beginPath(); cx.arc(x,y,5.5,0,7); cx.fill();
+      cx.strokeStyle='#1e1e2f'; cx.lineWidth=2; cx.stroke();
+    });
+  }
+}
+// clic en la gráfica → marca t₁ / t₂
+cv.addEventListener('click', ev=>{
+  if(S.rows.length<2) return;
+  const g=chartGeom(), b=cv.getBoundingClientRect();
+  const x=ev.clientX-b.left, iw=g.w-g.pl-g.pr;
+  const tMax=Math.max(30,S.rows[S.rows.length-1].t);
+  const t=Math.round(Math.max(0,Math.min(tMax,((x-g.pl)/iw)*tMax)));
+  const near=S.rows.reduce((p,r)=>Math.abs(r.t-t)<Math.abs(p.t-t)?r:p, S.rows[0]);
+  if(S.selA===null||S.selB!==null){ S.selA=near.t; S.selB=null; }
+  else S.selB=near.t;
+  syncSel();
+});
+
+/* ============================================================
+   TABLA EN VIVO
+   ============================================================ */
+function renderTable(full){
+  const body=$('liveBody'), rk={T:'rcpT',P:'rcpP',F:'rcpF'}[S.fn];
+  const active=FN[S.fn];
+  $('thRcp').textContent='Δ'+(S.fn==='F'?'f_ef':S.fn)+'/Δt ('+active.unidad+'/s)';
+  const build=r=>{
+    const tr=document.createElement('tr');
+    tr.dataset.t=r.t;
+    if(r.thr) tr.classList.add('thr');
+    if(r.t===S.selA) tr.classList.add('sel-a');
+    if(r.t===S.selB) tr.classList.add('sel-b');
+    tr.innerHTML =
+      '<td class="num">'+r.t+'</td>'+
+      '<td class="num">'+fmt(r.P,1)+'</td>'+
+      '<td class="num" style="color:#fd5d93">'+fmt(r.T,1)+'</td>'+
+      '<td class="num" style="color:#00f2c3">'+fmt(r.F,2)+'</td>'+
+      '<td class="num" style="color:#e14eca">'+(r[rk]===null?'<span style="color:rgba(255,255,255,.25)">no existe</span>':fmt(r[rk],3))+'</td>'+
+      '<td class="tiny" style="color:'+(r.evento&&r.evento!=='inicio'?'#fd5d93':'rgba(255,255,255,.35)')+'">'+(r.evento||'—')+'</td>';
+    return tr;
+  };
+  if(full || body.children.length!==S.rows.length){
+    body.innerHTML=''; const fr=document.createDocumentFragment();
+    S.rows.forEach(r=>fr.appendChild(build(r))); body.appendChild(fr);
+  } else if(S.rows.length && body.children.length===S.rows.length-1){
+    body.appendChild(build(S.rows[S.rows.length-1]));
+  }
+  $('rowCount').textContent=S.rows.length+(S.rows.length===1?' fila':' filas');
+  if($('autoScroll').checked){ const sc=$('liveScroll'); sc.scrollTop=sc.scrollHeight; }
+}
+$('liveBody').addEventListener('click', ev=>{
+  const tr=ev.target.closest('tr'); if(!tr) return;
+  const t=+tr.dataset.t;
+  if(S.selA===null||S.selB!==null){ S.selA=t; S.selB=null; } else S.selB=t;
+  syncSel();
+});
+
+/* ============================================================
+   RCP + comparación de intervalos
+   ============================================================ */
+function syncSel(){
+  const tMax=S.rows.length?S.rows[S.rows.length-1].t:1;
+  ['cT1','cT2'].forEach(id=>{ $(id).max=Math.max(1,tMax); });
+  if(S.selA!==null) $('cT1').value=S.selA;
+  if(S.selB!==null) $('cT2').value=S.selB;
+  renderRCP(); renderTable(true); drawChart();
+}
+function renderRCP(){
+  const k=FN[S.fn].key, u=FN[S.fn].unidad, nom=FN[S.fn].nombre;
+  const A=S.rows.find(r=>r.t===S.selA), B=S.rows.find(r=>r.t===S.selB);
+  if(!A||!B||A.t===B.t){
+    $('rcpEq').textContent='Selecciona dos instantes distintos (clic en la gráfica o en la tabla).';
+    $('rcpVal').textContent='—'; $('rcpCtx').textContent='';
+    $('cmpBox').style.display='none'; return;
+  }
+  const a=Math.min(A.t,B.t), b=Math.max(A.t,B.t);
+  const fa=(a===A.t?A:B)[k], fb=(b===B.t?B:A)[k];
+  const m=rcp(fa,fb,a,b);
+  $('rcpEq').innerHTML='RCP = ( f('+b+') − f('+a+') ) / ( '+b+' − '+a+' ) = ( '+
+    fmt(fb,2)+' − '+fmt(fa,2)+' ) '+u+' / '+(b-a)+' s';
+  $('rcpVal').textContent=(m>0?'+':'')+fmt(m,3)+' '+u+'/s';
+  const dir = m>0.001?'aumentó':(m<-0.001?'disminuyó':'se mantuvo');
+  $('rcpCtx').innerHTML='En contexto: entre el segundo <b>'+a+'</b> y el segundo <b>'+b+'</b>, la '+
+    nom.toLowerCase()+' '+dir+' en promedio <b>'+fmt(Math.abs(m),3)+' '+u+' por cada segundo</b>. '+
+    'Geométricamente, es la pendiente de la recta secante dibujada en la gráfica.';
+
+  if($('cmpBox').style.display!=='none'){
+    const mid=Math.floor((a+b)/2);
+    if(mid>a&&mid<b){
+      const M=S.rows.find(r=>r.t===mid);
+      const m1=rcp(fa,M[k],a,mid), m2=rcp(M[k],fb,mid,b);
+      $('cmpA').textContent=(m1>0?'+':'')+fmt(m1,3); $('cmpAl').textContent=u+'/s · ['+a+', '+mid+']';
+      $('cmpB').textContent=(m2>0?'+':'')+fmt(m2,3); $('cmpBl').textContent=u+'/s · ['+mid+', '+b+']';
+      const dif=Math.abs(m1-m2);
+      $('cmpVerdict').innerHTML = dif<1e-3
+        ? 'Las dos razones son iguales: en este intervalo la función se comporta de forma <b>lineal</b>.'
+        : 'Las dos razones <b>difieren</b> ('+fmt(dif,3)+' '+u+'/s de diferencia). Por eso esta función <b>no es lineal</b>: su rapidez de cambio depende del intervalo que elijas.';
+    }
+  }
+}
+$('btnCmp').addEventListener('click',()=>{
+  const box=$('cmpBox');
+  box.style.display = box.style.display==='none' ? 'grid' : 'none';
+  renderRCP();
+});
+
+/* ============================================================
+   CUATRO REPRESENTACIONES
+   ============================================================ */
+function renderReps(){
+  const e=esc(), d=dis(), last=S.rows[S.rows.length-1]||{t:0,T:S.Tamb,P:0,F:S.fObj};
+  $('repFn').textContent=FN[S.fn].label;
+  const Tinf=tInf(S.Tamb,last.P,d.R), tau=d.R*d.Cth;
+
+  if(S.fn==='T'){
+    $('repAlg').innerHTML =
+      'T(t) = T<sub>amb</sub> + P·R + (T₀ − T<sub>amb</sub> − P·R)·e<sup>−t/(R·C)</sup><br><br>'+
+      'T<sub>amb</sub> = <b>'+S.Tamb+'</b> °C · P = <b>'+fmt(last.P,1)+'</b> W<br>'+
+      'R = <b>'+d.R+'</b> °C/W · C = <b>'+d.Cth+'</b> J/°C<br>'+
+      'τ = R·C = <b>'+fmt(tau,0)+'</b> s · T<sub>∞</sub> = <b>'+fmt(Tinf,1)+'</b> °C';
+  } else if(S.fn==='P'){
+    $('repAlg').innerHTML =
+      'P(V) = α·C·V²·f<sub>ef</sub> + P<sub>est0</sub>·(V/V<sub>nom</sub>)<br><br>'+
+      'α = <b>'+S.alpha.toFixed(2)+'</b> · C = <b>'+(e.C*1e9).toFixed(1)+'</b> nF<br>'+
+      'V = <b>'+S.V.toFixed(3)+'</b> V · f<sub>ef</sub> = <b>'+fmt(last.F,2)+'</b> GHz<br>'+
+      '<b>Cuadrática en V</b>: si V se duplica, P<sub>din</sub> se cuadruplica';
+  } else {
+    $('repAlg').innerHTML =
+      'f<sub>ef</sub>(T) = f<sub>obj</sub>, si T ≤ T<sub>umbral</sub><br>'+
+      'f<sub>ef</sub>(T) = máx(f<sub>base</sub>, f<sub>ef</sub> − Δf), si T &gt; T<sub>umbral</sub><br><br>'+
+      'T<sub>umbral</sub> = <b>'+e.Tthr+'</b> °C · Δf = <b>'+e.dF+'</b> GHz<br>'+
+      'histéresis = <b>'+e.hist+'</b> °C · f<sub>base</sub> = <b>'+e.fbase+'</b> GHz<br>'+
+      '<b>Función definida por tramos</b>';
+  }
+
+  const k=FN[S.fn].key, u=FN[S.fn].unidad;
+  const rk={T:'rcpT',P:'rcpP',F:'rcpF'}[S.fn];
+  const tail=S.rows.slice(-5);
+  $('repTab').querySelector('tbody').innerHTML =
+    '<tr><td style="color:rgba(255,255,255,.5)">t (s)</td><td style="color:rgba(255,255,255,.5)">'+FN[S.fn].label+' ('+u+')</td><td style="color:rgba(255,255,255,.5)">Δ/Δt</td></tr>'+
+    tail.map(r=>'<tr><td>'+r.t+'</td><td style="color:'+FN[S.fn].color+'">'+fmt(r[k],2)+'</td><td style="color:#e14eca">'+
+      (r[rk]===null?'—':fmt(r[rk],3))+'</td></tr>').join('');
+
+  // sparkline
+  const vs=S.rows.map(r=>r[k]);
+  if(vs.length>1){
+    let a=Math.min(...vs), b=Math.max(...vs); if(b-a<1e-9) b=a+1;
+    const n=S.rows.length;
+    const pts=S.rows.map((r,i)=>[8+(i/(n-1))*204, 82-((r[k]-a)/(b-a))*72]);
+    let path='M'+pts.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L');
+    let sec='';
+    const A=S.rows.find(r=>r.t===S.selA), B=S.rows.find(r=>r.t===S.selB);
+    if(A&&B&&A.t!==B.t){
+      const ia=S.rows.indexOf(A), ib=S.rows.indexOf(B);
+      const pa=pts[ia], pb=pts[ib];
+      sec='<line x1="'+pa[0]+'" y1="'+pa[1]+'" x2="'+pb[0]+'" y2="'+pb[1]+'" stroke="#e14eca" stroke-width="2" stroke-dasharray="5 3"/>'+
+          '<circle cx="'+pa[0]+'" cy="'+pa[1]+'" r="3.5" fill="#1d8cf8"/>'+
+          '<circle cx="'+pb[0]+'" cy="'+pb[1]+'" r="3.5" fill="#00f2c3"/>';
+    }
+    $('repGraph').innerHTML =
+      '<path d="'+path+'" fill="none" stroke="'+FN[S.fn].color+'" stroke-width="2" stroke-linejoin="round"/>'+sec;
+    $('repGraphCap').textContent='Rango: '+fmt(a,1)+' – '+fmt(b,1)+' '+u;
+  } else { $('repGraph').innerHTML=''; $('repGraphCap').textContent='Inicia la corrida'; }
+
+  // contextual
+  let ctx='';
+  if(S.fn==='T'){
+    ctx='La temperatura empieza en el ambiente ('+S.Tamb+' °C) y tiende a <b>'+fmt(Tinf,1)+' °C</b>, '+
+        'no al infinito: hay una <b>asíntota</b>. Alcanza el 63 % de esa subida en τ = '+fmt(tau,0)+' s. '+
+        (Tinf>e.Tthr
+          ? 'Como <b>'+fmt(Tinf,1)+' °C supera el umbral de '+e.Tthr+' °C</b>, el throttling va a activarse y frenar la subida.'
+          : 'Como <b>'+fmt(Tinf,1)+' °C está por debajo del umbral de '+e.Tthr+' °C</b>, no habrá throttling con esta configuración.');
+  } else if(S.fn==='P'){
+    const P2=pTot(S.alpha,e.C,Math.min(e.Vmax,S.V*2),last.F,e.Pest0,e.Vnom);
+    ctx='Con V = '+S.V.toFixed(3)+' V la potencia es <b>'+fmt(last.P,1)+' W</b>. '+
+        'Como P depende de <b>V²</b>, subir el voltaje cuesta mucho más de lo que parece: '+
+        'al duplicarlo (hasta el límite del dominio) la potencia sube a <b>'+fmt(P2,1)+' W</b>. '+
+        'Ese exceso no se convierte en trabajo: se convierte en <b>calor</b>.';
+  } else {
+    const pct=(last.F/S.fObj*100);
+    ctx='El procesador debería trabajar a '+S.fObj.toFixed(2)+' GHz, pero está a <b>'+fmt(last.F,2)+' GHz</b> '+
+        '('+fmt(pct,0)+' % de lo pedido). '+
+        (pct<99.5
+          ? 'Le estamos dando la energía, pero el calor <b>devuelve</b> el límite: es el lazo cerrándose.'
+          : 'Todavía no hay throttling: el disipador está evacuando todo el calor generado.');
+  }
+  $('repCtx').innerHTML=ctx;
+}
+
+/* ============================================================
+   3D
+   ============================================================ */
+let three=null;
+function tempColor(T){
+  const stops=[[25,0x1d8cf8],[60,0x00f2c3],[88,0xff8d72],[105,0xfd5d93]];
+  if(T<=stops[0][0]) return stops[0][1];
+  if(T>=stops[stops.length-1][0]) return stops[stops.length-1][1];
+  for(let i=0;i<stops.length-1;i++){
+    const [t1,c1]=stops[i],[t2,c2]=stops[i+1];
+    if(T>=t1&&T<=t2){
+      const k=(T-t1)/(t2-t1);
+      const r=Math.round((c1>>16)+(((c2>>16)-(c1>>16))*k));
+      const g=Math.round(((c1>>8)&255)+((((c2>>8)&255)-((c1>>8)&255))*k));
+      const b=Math.round((c1&255)+(((c2&255)-(c1&255))*k));
+      return (r<<16)|(g<<8)|b;
+    }
+  }
+  return 0x1d8cf8;
+}
+function init3D(){
+  if(typeof THREE==='undefined'){ fail3D('Librería 3D no disponible'); return; }
+  const c=$('cpu3d'); let r;
+  try{ r=new THREE.WebGLRenderer({canvas:c,antialias:true,alpha:true}); }
+  catch(err){ fail3D('WebGL no disponible'); return; }
+  const b=c.getBoundingClientRect();
+  r.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  r.setSize(b.width,b.height,false);
+
+  const sc=new THREE.Scene();
+  const cam=new THREE.PerspectiveCamera(38,b.width/b.height,0.1,100);
+  cam.position.set(3.4,2.9,3.9); cam.lookAt(0,0.25,0);
+
+  sc.add(new THREE.AmbientLight(0xffffff,.55));
+  const dl=new THREE.DirectionalLight(0xffffff,.85); dl.position.set(4,7,5); sc.add(dl);
+  const pl=new THREE.PointLight(0xe14eca,.5,14); pl.position.set(-3,2,-3); sc.add(pl);
+
+  const root=new THREE.Group(); sc.add(root);
+
+  // PCB
+  root.add(new THREE.Mesh(new THREE.BoxGeometry(3.4,.12,3.4),
+    new THREE.MeshStandardMaterial({color:0x1b2340,roughness:.9,metalness:.1})));
+  // encapsulado
+  const pkg=new THREE.Mesh(new THREE.BoxGeometry(2.05,.16,2.05),
+    new THREE.MeshStandardMaterial({color:0x2b3553,roughness:.55,metalness:.35}));
+  pkg.position.y=.14; root.add(pkg);
+  // die
+  const die=new THREE.Mesh(new THREE.BoxGeometry(1.25,.1,1.25),
+    new THREE.MeshStandardMaterial({color:0x1d8cf8,emissive:0x1d8cf8,emissiveIntensity:.6,roughness:.35,metalness:.2}));
+  die.position.y=.27; root.add(die);
+  // base del disipador
+  const base=new THREE.Mesh(new THREE.BoxGeometry(1.9,.14,1.9),
+    new THREE.MeshStandardMaterial({color:0x9aa6c4,roughness:.28,metalness:.9}));
+  base.position.y=.4; root.add(base);
+  // aletas
+  const fins=new THREE.Group(); fins.position.y=.47; root.add(fins);
+  const finMat=new THREE.MeshStandardMaterial({color:0xc3cde4,roughness:.3,metalness:.92});
+  const N=13;
+  for(let i=0;i<N;i++){
+    const f=new THREE.Mesh(new THREE.BoxGeometry(.075,.95,1.85),finMat);
+    f.position.set(-.85+(i/(N-1))*1.7,.475,0); fins.add(f);
+  }
+  three={r,sc,cam,die,fins,root,dragging:false,px:0,rot:0.0};
+
+  // rotación manual
+  c.style.cursor='grab';
+  const dn=e=>{three.dragging=true;three.px=(e.touches?e.touches[0].clientX:e.clientX);c.style.cursor='grabbing'};
+  const mv=e=>{
+    if(!three.dragging)return;
+    const x=(e.touches?e.touches[0].clientX:e.clientX);
+    three.rot+=(x-three.px)*0.008; three.px=x; render3D();
+    if(e.touches)e.preventDefault();
+  };
+  const up=()=>{three.dragging=false;c.style.cursor='grab'};
+  c.addEventListener('mousedown',dn); window.addEventListener('mousemove',mv); window.addEventListener('mouseup',up);
+  c.addEventListener('touchstart',dn,{passive:true}); c.addEventListener('touchmove',mv,{passive:false}); c.addEventListener('touchend',up);
+  render3D();
+}
+function fail3D(msg){
+  $('cpu3d').style.display='none';
+  $('cpuFallback').classList.add('show');
+  $('badge3d').textContent='2D · '+msg;
+  $('badge3d').className='badge warning tiny';
+  const g=$('fbFins');
+  let s='';
+  for(let i=0;i<7;i++){ const y=-30+i*7; s+='<polygon points="'+(-40+i*2)+','+y+' '+(40-i*2)+','+(y-6)+' '+(40-i*2)+','+(y-2)+' '+(-40+i*2)+','+(y+4)+'" fill="#9aa6c4" opacity="'+(0.5+i*0.06)+'"/>'; }
+  g.innerHTML=s;
+}
+function render3D(){
+  if(!three) return;
+  three.root.rotation.y=three.rot;
+  three.r.render(three.sc,three.cam);
+}
+function update3D(T){
+  const c=tempColor(T);
+  if(three){
+    three.die.material.color.setHex(c);
+    three.die.material.emissive.setHex(c);
+    three.die.material.emissiveIntensity=.45+Math.min(1,Math.max(0,(T-25)/80))*.85;
+    render3D();
+  } else {
+    const d=$('fbDie'); if(d) d.setAttribute('fill','#'+c.toString(16).padStart(6,'0'));
+  }
+  const p=Math.min(100,Math.max(0,((T-25)/(110-25))*100));
+  $('tempPin').style.left=p+'%';
+}
+
+/* ============================================================
+   RENDER GLOBAL
+   ============================================================ */
+function renderAll(full){
+  const last=S.rows[S.rows.length-1]||{t:0,P:0,T:S.Tamb,F:S.fObj};
+  $('tNow').textContent=last.t;
+  $('mP').textContent=fmt(last.P,1);
+  $('mT').textContent=fmt(last.T,1);
+  $('mFe').textContent=fmt(last.F,2);
+  const fMean=S.rows.reduce((s,r)=>s+r.F,0)/Math.max(1,S.rows.length);
+  $('mR').textContent=fmt(fMean/S.fObj*100,0);
+
+  const e=esc();
+  if(last.F < S.fObj-1e-9){
+    $('thrAlert').classList.add('show');
+    $('thrText').textContent='Throttling activo · T = '+fmt(last.T,1)+' °C > T_umbral = '+e.Tthr+
+      ' °C  →  la frecuencia bajó de '+S.fObj.toFixed(2)+' a '+fmt(last.F,2)+' GHz';
+  } else $('thrAlert').classList.remove('show');
+
+  renderTable(full); drawChart(); renderRCP(); renderReps(); update3D(last.T);
+}
+
+/* ============================================================
+   CONTROLES
+   ============================================================ */
+function bindRange(id,lbl,fmtFn,onSet){
+  const el=$(id);
+  const upd=()=>{ onSet(+el.value); $(lbl).textContent=fmtFn(+el.value); renderAll(false); };
+  el.addEventListener('input',upd); return upd;
+}
+bindRange('cV','vV', v=>v.toFixed(3)+' V',   v=>S.V=v);
+bindRange('cF','vF', v=>v.toFixed(2)+' GHz', v=>{ S.fObj=v; if(S.fEf>v) S.fEf=v; });
+bindRange('cA','vA', v=>Math.round(v*100)+' %', v=>S.alpha=v);
+bindRange('cT','vT', v=>v+' °C', v=>{ S.Tamb=v; if(S.rows.length<=1) S.T=v; });
+$('cD').addEventListener('change',e=>{ S.dis=+e.target.value; renderAll(false); });
+$('cEsc').addEventListener('change',e=>{
+  S.esc=+e.target.value; const x=esc();
+  const cv=$('cV'); cv.min=x.Vmin; cv.max=x.Vmax; cv.value=x.Vnom; S.V=x.Vnom;
+  $('vV').textContent=x.Vnom.toFixed(3)+' V';
+  $('dV').textContent='Dominio: ['+x.Vmin.toFixed(2)+', '+x.Vmax.toFixed(2)+'] V';
+  const cf=$('cF'); cf.min=x.fbase; cf.max=x.fmax; cf.value=Math.min(x.fmax,4.0); S.fObj=+cf.value;
+  $('vF').textContent=S.fObj.toFixed(2)+' GHz';
+  $('dF').textContent='Dominio: ['+x.fbase.toFixed(1)+', '+x.fmax.toFixed(1)+'] GHz';
+  reset(); renderFx();
+});
+['cT1','cT2'].forEach((id,i)=>$(id).addEventListener('input',e=>{
+  const t=+e.target.value;
+  if(i===0){S.selA=t;$('vT1').textContent=t+' s';} else {S.selB=t;$('vT2').textContent=t+' s';}
+  renderRCP(); renderTable(true); drawChart();
+}));
+document.querySelectorAll('.fn-tab').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.fn-tab').forEach(x=>x.setAttribute('aria-selected','false'));
+  b.setAttribute('aria-selected','true'); S.fn=b.dataset.fn; renderAll(true);
+}));
+document.querySelectorAll('.metric.locked').forEach(m=>m.addEventListener('click',()=>{
+  const n=$('depNote'); n.textContent='No es un control: '+m.dataset.dep;
+  n.classList.add('show'); clearTimeout(n._t); n._t=setTimeout(()=>n.classList.remove('show'),6500);
+}));
+$('btnPlay').addEventListener('click',()=>S.running?pause():play());
+$('btnReset').addEventListener('click',reset);
+window.addEventListener('resize',()=>{
+  drawChart();
+  if(three){ const b=$('cpu3d').getBoundingClientRect();
+    three.cam.aspect=b.width/b.height; three.cam.updateProjectionMatrix();
+    three.r.setSize(b.width,b.height,false); render3D(); }
+});
+
+/* ============================================================
+   CATÁLOGO DE FÓRMULAS (dato, no código — spec 01 alcance 8)
+   ============================================================ */
+const FORMULAS=[
+ {id:'F1',n:'Potencia dinámica',eq:'P_din = α · C · V² · f',
+  vars:'α: factor de actividad (carga, 0–1) · C: capacitancia conmutada efectiva · V: voltaje · f: frecuencia',
+  un:'W (con C en F, V en V, f en Hz)',dom:'α ∈ [0,1] · V > 0 · f > 0',
+  sup:'C se calibra para que la potencia a voltaje y frecuencia nominales coincida con el TDP publicado del escenario. Es una calibración didáctica declarada, no un dato de fabricante.',
+  ref:'Weste &amp; Harris (2011); Rabaey et al. (2003)'},
+ {id:'F2',n:'Potencia estática',eq:'P_est = P_est₀ · (V / V_nom)',
+  vars:'P_est₀: fuga a voltaje nominal · V_nom: voltaje nominal',
+  un:'W',dom:'V > 0',
+  sup:'Se simplifica a dependencia lineal del voltaje. La fuga real crece también con la temperatura, lo que añadiría un segundo lazo (positivo). Se omite a propósito: enturbia el lazo que se quiere enseñar.',
+  ref:'Rabaey et al. (2003)'},
+ {id:'F3',n:'Potencia total',eq:'P = P_din + P_est',un:'W',vars:'—',dom:'—',
+  sup:'Toda la potencia eléctrica consumida se convierte en calor. En un procesador es una aproximación excelente: no hay trabajo mecánico de salida.',
+  ref:'Weste &amp; Harris (2011)'},
+ {id:'F4',n:'Temperatura del die (modelo RC de primer orden)',
+  eq:'T(t + Δt) = T_amb + P·R + ( T(t) − T_amb − P·R ) · e^( −Δt / (R·C) )',
+  vars:'T_amb: temperatura ambiente · R: resistencia térmica del disipador · C: capacitancia térmica · Δt: paso',
+  un:'°C (R en °C/W, C en J/°C, Δt en s)',dom:'R > 0 · C > 0 · Δt > 0',
+  sup:'Solución exacta del paso suponiendo P constante durante Δt. Es la ley de enfriamiento de Newton en su forma discreta; se resuelve analíticamente y no por aproximación numérica, para que la función exponencial quede a la vista.',
+  ref:'Incropera et al. (2011); función exponencial en Stewart et al. (2012)'},
+ {id:'F5',n:'Temperatura de equilibrio (asíntota)',eq:'T_∞ = T_amb + P · R',
+  vars:'—',un:'°C',dom:'—',
+  sup:'Límite de F4 cuando t crece. Es la respuesta matemática a "¿hasta dónde sube la temperatura?": no sube para siempre — está acotada.',
+  ref:'Incropera et al. (2011)'},
+ {id:'F6',n:'Política de throttling (función definida por tramos)',
+  eq:'f_ef = f_obj,                        si T ≤ T_umbral\nf_ef = máx( f_base , f_ef − Δf ),      si T > T_umbral\nf_ef = mín( f_obj , f_ef + Δf ),       si T < T_umbral − h',
+  vars:'T_umbral: temperatura de activación · Δf: escalón de frecuencia · h: histéresis · f_base: frecuencia mínima',
+  un:'GHz',dom:'f_ef ∈ [f_base, f_obj]',
+  sup:'La histéresis h evita que la frecuencia alterne en cada paso alrededor del umbral. Sin ella, el sistema oscilaría y esa oscilación sería un artefacto numérico, no física.',
+  ref:'Modelo propio; funciones por tramos en Stewart et al. (2012)'},
+ {id:'F7',n:'Razón de cambio promedio',eq:'RCP = ( f(b) − f(a) ) / ( b − a )',
+  vars:'a, b: extremos del intervalo · f: la función activa',
+  un:'unidad de f por unidad de la variable independiente (°C/s, W/V, GHz/s)',
+  dom:'a ≠ b — con un solo punto la razón de cambio no existe',
+  sup:'Es la pendiente de la recta secante que une los puntos (a, f(a)) y (b, f(b)). El concepto central de la Guía 1.',
+  ref:'Stewart, Redlin &amp; Watson (2012) — bibliografía del curso'},
+ {id:'F8',n:'Rendimiento relativo',eq:'R = f̄_ef / f_obj',
+  vars:'f̄_ef: promedio aritmético de la frecuencia efectiva sobre los pasos de la corrida',
+  un:'adimensional (se muestra en %)',dom:'f_obj > 0',
+  sup:'Se usa el promedio aritmético y no Σ f_ef·Δt. Esa suma es una suma de Riemann (acumulación), eje de la Guía 6. Este dato mantiene la experiencia dentro del eje asignado.',
+  ref:'Definición propia; promedio en Swokowski &amp; Cole (2011)'}
+];
+function renderFx(){
+  $('fxGrid').innerHTML=FORMULAS.map(f=>
+    '<div class="fx-card"><div class="fx-head"><span class="fx-id">'+f.id+'</span><h3 style="margin:0">'+f.n+'</h3></div>'+
+    '<pre class="fx-eq" style="margin:8px 0;white-space:pre-wrap;font-family:var(--vc-font-mono)">'+f.eq+'</pre>'+
+    '<div class="fx-meta">'+
+      '<div><b>Variables</b>'+f.vars+'</div>'+
+      '<div><b>Unidades</b>'+f.un+'</div>'+
+      '<div><b>Dominio</b>'+f.dom+'</div>'+
+    '</div>'+
+    '<div class="fx-meta" style="margin-top:12px"><div style="grid-column:1/-1"><b>Supuesto declarado</b>'+f.sup+'</div></div>'+
+    '<div class="fx-meta" style="margin-top:8px"><div style="grid-column:1/-1"><b>Referencia</b>'+f.ref+'</div></div>'+
+    '</div>').join('');
+}
+
+/* ============================================================
+   ARRANQUE
+   ============================================================ */
+init3D();
+renderFx();
+reset();
+S.selA=null; S.selB=null;
+</script>
+</body>
+</html>
