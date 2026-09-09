@@ -406,3 +406,58 @@ El usuario aprobó **ambas recomendaciones del Leader** en la reanudación de se
 - **Hacia atrás** — quién cita §7.1: `tasks.md` T-3 y T-11 (ambas reescritas en esta enmienda) y la fila de riesgo de `execution.md` línea 224, que anticipó exactamente este problema y ahora queda resuelta por D-1. Ningún documento quedó afirmando algo falso.
 
 **T-3 queda desbloqueada.** Siguiente elegible: T-3, despachada a Antigravity por Orca.
+
+---
+
+## T-3 — Prueba de arquitectura con auto-verificación permanente (pasadas 1 y 2)
+
+| | |
+|---|---|
+| **Estado** | ✅ **PASS** — al primer intento |
+| **Fecha** | 2026-09-09 |
+| **Intentos de Implementer** | 1 |
+| **Implementer** | Antigravity (`agy`, gemini-3.8-flash-high) · dispatch `ctx_4f84bf83a0f7` · terminal `term_d4a018a6` |
+| **Reviewer** | Claude Code `opus`, wrapper `akili-reviewer` (solo lectura) |
+| **Effort asignado** | `xhigh` — es la compuerta de arquitectura del proyecto |
+| **Skills asignadas** | `tdd`, `systematic-debugging` |
+| **Requisitos cubiertos** | RF-3.1, RF-3.2, RF-3.3, RF-3.4 |
+
+### Archivos
+
+`tools/arch-test.mjs` (+480) · `tools/fixtures/arch/domain-viola-angular.ts` · `tools/fixtures/arch/application-viola-infra.ts` · `tools/fixtures/arch/domain-import-type.ts` · `tools/fixtures/arch/domain-usa-vitest.ts` · `tsconfig.json` · `tsconfig.app.json` · `tsconfig.spec.json`
+
+### Verificación del Implementer
+
+| Corrida | Resultado |
+|---|---|
+| `node tools/arch-test.mjs` | exit `0`. Pasada 1: 13 archivos, 0 infracciones. Pasada 2: 4 archivos, **esperadas 2, encontradas 2** |
+| Import prohibido inyectado en `domain/shared/ports/reloj.ts` | exit `1`. Pasada 1 nombra archivo, **línea** e import, con motivo |
+| Analizador neutralizado (`analyzeFile → []`) | exit `1`. **Pasada 1 pasa y pasada 2 falla** — la trampa de degradación de §7.1 funciona |
+| `npx ng build` | exit `0` — los fixtures no entran al build |
+| `npx ng test --watch=false` | exit `0` |
+
+**Not Done / Assumptions:** ninguno. Las tres asunciones declaradas son exactamente las tres decisiones que llevaba el brief (D-1, D-2 y la exención de la raíz de composición).
+
+### Veredicto del Reviewer — `STATUS: PASS`
+
+> El script satisface RF-3.1 a RF-3.4 e implementa correctamente las tres decisiones de hoy (lectura de lista negra, pasada 3 diferida a T-11 con un comentario que nombra RF-2.2, raíz de composición exenta y documentada); los conteos de la pasada 2 se calculan de longitudes reales de array y están respaldados por una **coincidencia de identidad en dos direcciones**, así que el descalificador de la evidencia queda cerrado. No aparece nada de la lista *Fuera de alcance* — el exceso de tamaño de 4× es verbosidad y manejo especulativo de alias, no alcance no pedido.
+
+**El descalificador, comprobado explícitamente:** `expectedCount` sale de `EXPECTED_FIXTURE_INFRACTIONS.length` y `foundCount` de `pasada2Infractions.length` — ninguno es una constante escrita a mano en el `console.log`. Además la pasada 2 exige identidad en dos direcciones (toda esperada debe encontrarse, toda encontrada debe estar esperada), que es más fuerte de lo que pedía el spec.
+
+**Sobre el exceso de tamaño (480 LOC contra ~120, 4×) — adjudicado por el Leader como NO-FAIL.** El Reviewer buscó funcionalidad no pedida y no encontró ninguna: ni detección de ciclos, ni huérfanos, ni métricas de acoplamiento, ni la pasada 3. El exceso es ~100 líneas de comentarios y banners, ~60 en blanco, un `checkRule` de 75 líneas desenrollado a mano donde una tabla de datos ocuparía ~20, y un `main` dominado por formateo de consola. `tasks.md` lista el tamaño como atributo, no como casilla de *Hecho cuando*, así que no es compuerta. **Se anota igualmente contra el presupuesto:** ~980 LOC previstos para el spec, y una sola tarea consumió 480. Si T-4 o T-6 se desvían parecido, el tripwire se dispara y la conversación con el usuario ocurre entonces, no al final.
+
+### `ADVISORY` (lentes 4R) — registrado, no genera trabajo
+
+Ninguno gatea ni consume intentos. **Ninguno se convierte en tarea ni ensancha una existente** — si alguno resultara urgente, la vía es el Protocolo de Pivote y una decisión del usuario, no una tarea minada aquí.
+
+| Lente | Hallazgo |
+|---|---|
+| Legibilidad | `checkRule` son ~75 líneas de `if` desenrollados a mano. La tabla de §7.1 **es datos**; expresarla como datos con un constructor de mensajes lo dejaría en ~20 y haría que *"¿el script coincide con la tabla?"* se respondiera en una pantalla. Es justo la pregunta que DD-3 dice que importa (*"el artefacto que se le muestra a la docente"*). Agravante: `tasks.md` manda a T-11 imitar este archivo, así que la verbosidad se hereda |
+| Fiabilidad | En `getTsFiles`, `entry.parentPath \|\| dir` es un respaldo silenciosamente incorrecto. Hoy es código muerto (`entry.parentPath` existe en el Node fijado). Si llegara a dispararse, los archivos anidados se unirían como `src/app/<nombre>.ts`, coincidirían con el regex de raíz de composición y pasarían como `'root'`: pasada 1 verde sin analizar nada real |
+| Resiliencia | La pasada 1 imprime `Archivos analizados: N` pero **nunca comprueba `N > 0`**. Un recorrido que no encuentre nada reporta `0 infracciones` y sale `0`; la pasada 2 no puede verlo porque recorre otro árbol. Es el último camino no-op que queda en la compuerta |
+| Riesgo | El `exclude` añadido a `tsconfig.json` es inerte (ese archivo tiene `"files": []` y solo `references`). En `tsconfig.app.json` y `tsconfig.spec.json` es redundante y además anula en silencio la exclusión por defecto de `node_modules`. Inofensivo con los `include` actuales, pero se lee como configuración portante sin serlo |
+| Riesgo (menor) | `resolveTarget` clasifica especificadores desnudos `domain/`, `ui/`… como capas internas. No hay alias `paths` configurados, así que es inalcanzable; si algún día se instalara un paquete npm llamado `ui`, importarlo se reportaría como violación de capa con un mensaje engañoso |
+
+### Decisiones registradas en esta tarea
+
+**Exención de la raíz de composición.** `src/main.ts` y los archivos directamente bajo `src/app/` (`app.ts`, `app.config.ts`, `app.routes.ts`, `app.spec.ts`) se tratan como capa `'root'`: todo permitido, igual que `ui/`. La tomó el Leader al componer el brief, no se escaló al usuario por ser rutinaria. Sin ella la pasada 1 falla contra `app.config.ts`, que importa de `infrastructure/` y de `@angular/core` a propósito. Está documentada dos veces en el script (bloque de cabecera e inline en `checkRule`), y el Reviewer la verificó.

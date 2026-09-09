@@ -98,7 +98,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
 
 ---
 
-### [ ] T-3 — Prueba de arquitectura con auto-verificación permanente *(pasadas 1 y 2)*
+### [x] T-3 — Prueba de arquitectura con auto-verificación permanente *(pasadas 1 y 2)*
 
 > **Alcance recortado por la enmienda D-2 (2026-09-09):** la pasada 3 (alcanzabilidad desde `main.ts`, RF-2.2) **salió de esta tarea** y es ahora **T-11**, tras T-6. Motivo: `src/app/ui/` no existe hasta T-6, así que la pasada 3 aquí falla por construcción. Ver [`design.md` §7.1](design.md).
 >
