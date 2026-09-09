@@ -593,3 +593,75 @@ Se registran aquí porque T-10 no puede inventarlas y ningún advisory se convie
 ### Presupuesto
 
 291 LOC en T-4 contra ~120 previstos (**2,4×**), y dos rondas de revisión en vez de una. Acumulado del spec: **4 de 11 tareas · ~771 LOC de ~980 · 6 rondas de ~13**. El LOC va adelantado respecto al avance de tareas (36 % de las tareas, 79 % del presupuesto de líneas). **Todavía no dispara el tripwire**, pero si T-6 —la tarea más grande que queda— repite el patrón, se escala al usuario antes de despacharla.
+
+---
+
+## T-5 — Fuentes empaquetadas y verificación de orígenes externos
+
+| | |
+|---|---|
+| **Estado** | ⏸️ **`[~]` — PASS del Reviewer, pero con una casilla abierta que solo un humano puede cerrar** |
+| **Fecha** | 2026-09-09 |
+| **Intentos** | 2 (intento 1 `FAIL`, intento 2 `PASS`) |
+| **Implementer** | Antigravity (`agy`) · dispatch `ctx_a5624dc4578b` |
+| **Effort** | `medium` → `high` en el rework (regla de reintento) |
+| **Archivos** | `tools/check-external-origins.mjs` (+82) · `src/app/ui/styles/_fonts.scss` (+28) · `src/styles.scss` (+2) · `package.json` (+4/−1) · `package-lock.json` (+60/−38) |
+
+**Por qué `[~]` y no `[x]`:** la casilla *"Con la red deshabilitada, la app renderiza con Poppins, no con la pila de reserva del sistema — verificado a ojo"* es **verificación humana**. Un PASS del Reviewer audita lo que se escribió, no lo que falta por observar. Se prohibió al Implementer cerrarla y no la cerró. La tarea llega a `[x]` cuando el usuario confirme lo que ve, no antes.
+
+### Intento 1 — Reviewer · `STATUS: FAIL`
+
+**Hallazgo único: la cabecera de `_fonts.scss` atribuía MIT a los paquetes npm.** Los dos manifiestos declaran **OFL-1.1** (`@fontsource/poppins@5.3.0` y `@fontsource/jetbrains-mono@5.3.0`, campo `license` y archivo `LICENSE` con el texto íntegro de la SIL OFL). Lo MIT es el **monorepo/tooling de Fontsource**, no estos paquetes publicados.
+
+No es cosmética: esa cabecera es el **único registro permanente** de la excepción, y lo que miden `CLAUDE.md` §Licencias y RNF-6 es el **paquete npm**, no el `.woff2`. Tal como estaba, afirmaba que la dependencia sí está en la lista aprobada y que solo los binarios necesitan permiso. Es al revés: **la dependencia entera está fuera**. El registro *achicaba* la excepción en lugar de declararla — el mismo modo de fallo que D-3 y D-4 existen para impedir.
+
+**Regla violada:** `CLAUDE.md` §Licencias · `requirements.md` **RNF-6** · `design.md` **DD-4** (que nunca afirmó MIT) · alcance de T-5.
+
+### Enmienda D-4 — La lista blanca no puede ser literalmente vacía
+
+El Implementer **declaró** que no podía cumplir *"lista blanca vacía"* en lugar de disimularlo, que es lo contrario de lo que ocurrió en T-4. **Hecho verificado por el Leader sobre `dist/`:** el artefacto contiene exactamente **seis** URLs, todas de `www.w3.org` (`2000/svg`, `1999/xhtml`, `1999/xlink`, `1998/Math/MathML`, `2000/xmlns/`, `XML/1998/namespace`), emitidas por el compilador de Angular para manipular el DOM. **Cero CDNs.**
+
+Una lista blanca literalmente vacía haría fallar la verificación **en toda compilación de Angular, por construcción**.
+
+**El Reviewer la auditó por encargo explícito, y sobrevivió — pero corrigiendo el argumento del Leader.** El Leader defendió *"un espacio de nombres XML es identificador, no destino de red"*. La respuesta es mejor y más barata: **RF-8.1 acota su propio alcance en el paréntesis** — *"no contiene referencias a orígenes HTTP externos (CDN de fuentes, de librerías o de estilos)"*. Un URI del W3C no es ninguna de las tres. No hace falta el argumento semántico; basta el texto del requisito.
+
+Verificaciones del Reviewer sobre la estrechez de la excepción: constante literal a nivel de módulo, **un único sitio de uso**, cero `process.env`, cero `argv`, cero archivo de configuración, cero `try/catch` en la ruta de análisis. El anclaje resiste `https://www.w3.org.evil.com/x` y `https://www.w3.org@evil.com`. Un dominio nuevo exige editar el script — acto visible en el diff.
+
+**Sobre la alternativa que el Leader propuso** (acotar a las seis URIs exactas en vez de al dominio): el Reviewer la rechazó con motivo. Es más estrecha, pero *"un `ng update` que añada un namespace nuevo rompería el build por algo que no es un defecto, y eso erosiona la compuerta más de lo que la protege"*. Punto medio recomendado para más adelante: dominio como criterio de **fallo**, lista de seis como criterio de **advertencia**.
+
+### Intento 2 (rework) — Reviewer · `STATUS: PASS`
+
+Un solo archivo tocado. La cabecera nueva declara ambos paquetes como OFL-1.1, aclara que MIT es el monorepo, dice **explícitamente** que OFL-1.1 no figura ni en `CLAUDE.md` ni en RNF-6, y nombra a T-10 como dueño de formalizarla.
+
+**Dato que el Reviewer añadió y que cierra el círculo:** la premisa no era huérfana — `tasks.md` T-9 ya exige *"MIT / Apache-2.0 / BSD / ISC / **OFL**"* para dependencias de runtime, y DD-4 instala estos paquetes con *"verificados: OFL-1.1"*. **El spec aprueba la excepción a sabiendas**; lo que faltaba era que RNF-6 y las guías raíz lo dijeran.
+
+**Alcance prohibido — limpio.** Repasó los seis vetos uno a uno contra el contenido final: `check-external-origins.mjs` **byte-idéntico** al intento 1; sin conteo de URIs omitidos, sin lista de seis, sin nota del límite de URLs literales, `TARGET_EXTENSIONS` sin ampliar, sin peso mono 600, sin subsetting. La única autorización concedida está y es la única: la cita a `_tokens.scss` como fuente de los pesos desapareció, quedando solo `docs/ux-ui/design.md` §7.4.
+
+**Casillas convertidas de aserción en hecho** (verificadas en el origen, no en el comentario):
+
+| Casilla | Evidencia del Reviewer |
+|---|---|
+| Script limpio sobre `dist/` | exit 0, **3 archivos** analizados = `index.html` + `main-*.js` + `styles-*.css`. Y `collectFiles` vacío ⇒ `exit 1`: **no puede aprobar por ausencia de datos** |
+| `font-display: swap` | `@fontsource/poppins/400.css:5` y `jetbrains-mono/700.css:5,15,25,35` lo llevan en cada `@font-face`; los `src:` son relativos (`./files/*.woff2`), sin origen de red |
+| Solo los pesos usados | Los cinco `@use` mapean **1:1** contra §7.4. Poppins 300, presente en el mock, correctamente ausente |
+| `index.html` sin CDN | Leído entero: 13 líneas, un solo `<link>`, a `favicon.ico`. El CLI nunca generó uno — por eso el archivo no está en el diff, y es correcto |
+| RNF-5, lockfile | `package-lock.json` ahora sí en el diff, con `resolved` + `integrity` + `"license": "OFL-1.1"` en ambas entradas |
+
+### `ADVISORY` acumulado de T-5 — registrado, no genera trabajo
+
+| Lente | Hallazgo |
+|---|---|
+| Riesgo | **La excepción de D-4 se aplica en silencio.** El `continue` no deja rastro: si Angular emitiera cero URIs del W3C, o siete, la salida sería idéntica. Contar los omitidos e imprimirlos volvería D-4 **auditable en cada corrida** en vez de una afirmación del comentario |
+| Fiabilidad | La cabecera del script no declara su límite real (URLs **literales**), y el mensaje de éxito afirma un tajante *"Cero orígenes externos"* — más de lo que la herramienta puede saber |
+| Riesgo | `TARGET_EXTENSIONS` deja fuera `.json`, `.webmanifest` y `.svg`. Coincide con §7.3, así que no es desviación, pero son vectores plausibles de CDN cuando el proyecto crezca. Candidato a T-9 |
+| Fiabilidad | **Falta el peso mono 600 que el ejemplar ya usa:** el mock aplica `--vc-font-mono` con `font-weight:600` en `.ctrl-val`. Con los pesos de hoy ese texto caerá en sintético o en 700. No infringe T-5 —§7.4 no declara mono 600— pero es **deuda concreta para `002/02`** |
+| Riesgo | **21 `@font-face` para 5 pesos:** se empaquetan devanagari, cyrillic, greek y vietnamese además de latin, y en `woff2` **y** `woff`. El subsetting está fuera de alcance de T-5, pero `@fontsource` publica variantes por subconjunto que recortarían ~2/3 de `media/`. Anotarlo para **T-9 (RNF-1)** evita que la conversación aparezca con el presupuesto ya ajustado |
+| Riesgo | El `package-lock.json` arrastra la eliminación colateral de tres entradas `@emnapi/*` (`dev + optional + peer`), ajena a las fuentes. No afecta runtime ni licencias, pero cambia qué instala un `npm ci` de dependencias opcionales en otras plataformas. **T-9 debe confirmar un `npm ci` en limpio** |
+
+### Obligaciones heredadas que salen de T-5 — **para T-10**
+
+Se registran aquí porque el Reviewer advirtió que hoy viven **solo en un comentario SCSS**, y un comentario no es un mecanismo de transferencia:
+
+5. **Formalizar la excepción OFL-1.1** en `AGENTS.md`, `CLAUDE.md` §Licencias y en **`requirements.md` RNF-6**, que hoy dice literalmente *"0 dependencias fuera de MIT / Apache-2.0 / BSD / ISC"* y queda contradicho por dos dependencias instaladas con aprobación del spec. Nótese que `tasks.md` T-9 **ya** lista `OFL` entre las licencias aceptables: la contradicción es entre RNF-6 y T-9, y le toca a T-10 cerrarla.
+
+*(Numeración continuada desde las cuatro obligaciones registradas en T-4.)*

@@ -1,0 +1,28 @@
+/**
+ * =============================================================================
+ * _fonts.scss — Fuentes tipográficas locales empaquetadas vía @fontsource
+ * =============================================================================
+ *
+ * EXCEPCIÓN DE LICENCIAS (DD-4, TRD TC-1, CLAUDE.md, RNF-6):
+ *  - Paquetes npm @fontsource/poppins@5.3.0 y @fontsource/jetbrains-mono@5.3.0:
+ *    licencia OFL-1.1 (campo "license" del manifiesto y archivo LICENSE del paquete).
+ *    La licencia MIT corresponde al monorepo / tooling de Fontsource, NO a estos paquetes.
+ *  - Archivos tipográficos (Poppins, JetBrains Mono): licencia OFL-1.1 (SIL Open Font License).
+ *  - La licencia OFL-1.1 NO figura en la lista permisiva de CLAUDE.md (MIT / Apache-2.0 / BSD)
+ *    ni en RNF-6 de requirements.md. La excepción está formalmente aprobada por DD-4 y por el
+ *    alcance de T-5, siendo compatible con PRD C1 (software libre sin coste ni cuotas).
+ *  - Obligación constitucional: T-10 debe incorporar formalmente la excepción OFL-1.1 a
+ *    AGENTS.md, CLAUDE.md y a RNF-6 de requirements.md.
+ *
+ * PESOS DECLARADOS SEGÚN TOKENS (docs/ux-ui/design.md §7.4):
+ *  - Poppins: 400 (Body, Caption), 600 (H1, H2), 700 (Display).
+ *  - JetBrains Mono: 400 (Tabular numbers / código), 700 (Metric).
+ * Todos los @font-face generados por @fontsource incluyen `font-display: swap` (RF-8.3).
+ * =============================================================================
+ */
+
+@use '@fontsource/poppins/400.css' as *;
+@use '@fontsource/poppins/600.css' as *;
+@use '@fontsource/poppins/700.css' as *;
+@use '@fontsource/jetbrains-mono/400.css' as *;
+@use '@fontsource/jetbrains-mono/700.css' as *;

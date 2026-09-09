@@ -173,7 +173,7 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
 
 ---
 
-### [ ] T-5 — Fuentes empaquetadas y verificación de orígenes externos
+### [~] T-5 — Fuentes empaquetadas y verificación de orígenes externos
 
 - **Capa:** `ui/styles/`, `tools/`
 - **Depende de:** T-4
@@ -186,18 +186,25 @@ Paralelizables: {T-2, T-4} · {T-5, T-6} · pero solo en worktrees separados (re
 - **Alcance:**
   - Instalar `@fontsource/poppins` y `@fontsource/jetbrains-mono` (OFL-1.1 verificada).
   - `ui/styles/_fonts.scss` importando **solo** los pesos que los tokens declaran, con `font-display: swap`.
-  - `tools/check-external-origins.mjs`: recorre el artefacto de producción buscando `http://` y `https://` literales en JS, CSS y HTML, con lista blanca vacía.
+  - `tools/check-external-origins.mjs`: recorre el artefacto de producción buscando `http://` y `https://` literales en JS, CSS y HTML, con lista blanca vacía **salvo los identificadores de espacio de nombres XML del W3C** (enmienda D-4).
   - Retirar cualquier `<link>` a CDN de fuentes que el CLI haya generado en `index.html`.
 - **Fuera de alcance:** optimización de subconjuntos de glifos.
+
+> **Enmienda D-4 (2026-09-09) — la lista blanca no puede ser literalmente vacía.** El bundle de producción de Angular contiene **seis** URIs de `www.w3.org` (`2000/svg`, `1999/xhtml`, `1999/xlink`, `1998/Math/MathML`, `2000/xmlns/`, `XML/1998/namespace`), emitidos por el propio compilador para manipular el DOM. Verificado sobre `dist/` de esta corrida: son las **únicas** URLs del artefacto, y no hay ninguna CDN.
+>
+> Una lista blanca literalmente vacía haría fallar la verificación **en toda compilación de Angular, por construcción** — el mismo modo de fallo que D-1 y D-3, y por el mismo motivo: una regla escrita sin conocer el artefacto real.
+>
+> La excepción es **estrecha y sin escapatoria general**: una constante `/^https?:\/\/www\.w3\.org\//i` escrita en el script, no un mecanismo de configuración. Un dominio nuevo exige editar el script, que es un acto visible en el diff. Y no debilita RF-8.1: un espacio de nombres XML es un **identificador**, no un destino de red — no genera tráfico ni con la red activa ni sin ella.
+
 - **Verificación:** `npm run build && node tools/check-external-origins.mjs` termina en `0`.
 - **Descalificador de la evidencia:** el script detecta **URLs literales**. Una URL construida por concatenación en tiempo de ejecución se le escapa, así que un `0` **no** prueba ausencia total de peticiones externas. La confirmación real es cargar la app con la red deshabilitada y mirar la pestaña de red — comprobación manual obligatoria de esta tarea.
 - **Entrada que haría fallar la verificación:** añadir `<link href="https://fonts.googleapis.com/...">` a `index.html`.
 - **Hecho cuando:**
-  - [ ] `node tools/check-external-origins.mjs` sale limpio sobre el artefacto de producción
-  - [ ] Con la red deshabilitada, la app renderiza con **Poppins**, no con la pila de reserva del sistema — verificado a ojo y registrado en `execution.md`
-  - [ ] `font-display: swap` está declarado
-  - [ ] Solo se importan los pesos que los tokens usan
-  - [ ] `index.html` no contiene ningún `<link>` a una CDN
+  - [x] `node tools/check-external-origins.mjs` sale limpio sobre el artefacto de producción
+  - [ ] **Con la red deshabilitada, la app renderiza con Poppins, no con la pila de reserva del sistema — verificado a ojo y registrado en `execution.md`** ← ⏸️ **única casilla abierta. Verificación HUMANA: ningún agente puede cerrarla**
+  - [x] `font-display: swap` está declarado
+  - [x] Solo se importan los pesos que los tokens usan
+  - [x] `index.html` no contiene ningún `<link>` a una CDN
 
 ---
 
