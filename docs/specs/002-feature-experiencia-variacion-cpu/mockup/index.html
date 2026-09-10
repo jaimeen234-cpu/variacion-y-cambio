@@ -158,12 +158,6 @@ select,input[type=number]{
 select:focus-visible,input:focus-visible{outline:2px solid var(--vc-primary);outline-offset:1px}
 
 /* Dependientes */
-.dep-note{
-  font-size:.75rem;color:var(--vc-warning);background:rgba(255,141,114,.1);
-  border:1px solid rgba(255,141,114,.3);border-radius:var(--vc-radius-sm);
-  padding:8px 10px;margin-top:var(--vc-space-2);display:none;
-}
-.dep-note.show{display:block}
 .metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--vc-space-2)}
 .metric{
   background:var(--vc-grad-card);border:1px solid var(--vc-border);border-radius:var(--vc-radius-md);
@@ -179,7 +173,45 @@ select:focus-visible,input:focus-visible{outline:2px solid var(--vc-primary);out
 }
 .metric .u{font-size:.75rem;color:var(--vc-text-secondary);font-weight:400;margin-left:3px}
 .metric .fx{font-size:.625rem;color:var(--vc-text-muted);font-family:var(--vc-font-mono);margin-top:4px}
-.metric.locked{cursor:not-allowed}
+.metric.locked{cursor:pointer}
+.metric:focus-visible{outline:2px solid var(--vc-primary);outline-offset:2px}
+.metric.act{border-color:var(--m,var(--vc-info));box-shadow:0 0 0 1px var(--m,var(--vc-info)) inset}
+.metric .hint{
+  position:absolute;right:8px;top:8px;font-size:.5625rem;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--vc-text-muted);font-weight:700;opacity:0;transition:opacity var(--vc-motion-fast);
+}
+.metric:hover .hint,.metric:focus-visible .hint,.metric.act .hint{opacity:1}
+
+/* Desglose de la cuenta (clic en una tarjeta dependiente) */
+.desglose{
+  display:none;margin-top:var(--vc-space-2);padding:var(--vc-space-3);
+  background:rgba(0,0,0,.24);border:1px solid var(--vc-border);border-radius:var(--vc-radius-md);
+}
+.desglose.show{display:block}
+.dg-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:var(--vc-space-2)}
+.dg-head h5{margin:0;font-size:.875rem;font-weight:600;color:var(--m,var(--vc-info))}
+.dg-close{
+  margin-left:auto;background:transparent;border:1px solid var(--vc-border);color:var(--vc-text-secondary);
+  border-radius:var(--vc-radius-sm);font-family:var(--vc-font-sans);font-size:.6875rem;font-weight:600;
+  padding:4px 10px;cursor:pointer;
+}
+.dg-close:hover{color:#fff;border-color:rgba(255,255,255,.28)}
+.dg-vars{
+  font-size:.6875rem;color:var(--vc-text-secondary);font-family:var(--vc-font-mono);
+  border-bottom:1px solid var(--vc-border);padding-bottom:var(--vc-space-2);margin-bottom:var(--vc-space-3);
+}
+.dg-vars b{color:#fff;font-family:var(--vc-font-sans);letter-spacing:.04em}
+.dg-step{border-left:2px solid var(--m,var(--vc-info));padding-left:10px;margin-bottom:var(--vc-space-3)}
+.dg-step:last-of-type{margin-bottom:0}
+.dg-lbl{font-size:.625rem;text-transform:uppercase;letter-spacing:.08em;color:var(--vc-text-muted);font-weight:700}
+.dg-eq,.dg-num,.dg-res{font-family:var(--vc-font-mono);font-variant-numeric:tabular-nums;overflow-x:auto}
+.dg-eq{font-size:.75rem;color:var(--vc-text-secondary);margin-top:3px;white-space:pre-wrap}
+.dg-num{font-size:.75rem;color:#fff;margin-top:2px;white-space:normal;overflow-wrap:normal}
+.dg-res{font-size:.8125rem;font-weight:600;color:var(--m,var(--vc-info));margin-top:2px}
+.dg-note{
+  font-size:.6875rem;color:var(--vc-text-muted);margin-top:var(--vc-space-3);
+  border-top:1px solid var(--vc-border);padding-top:var(--vc-space-2);
+}
 
 /* Chart */
 .chart-head{display:flex;flex-wrap:wrap;gap:var(--vc-space-2);align-items:center;margin-bottom:var(--vc-space-3)}
@@ -301,6 +333,32 @@ tr.sel-b td{box-shadow:inset 3px 0 0 var(--vc-success)}
   display:grid;place-items:center;font-weight:700;font-size:.875rem;margin-bottom:var(--vc-space-2);
 }
 .vartable td:first-child{font-family:var(--vc-font-mono);font-size:.75rem}
+
+/* Índice de variables */
+.vix-legend{display:flex;flex-wrap:wrap;gap:var(--vc-space-2);margin-bottom:var(--vc-space-4)}
+.vix-legend .badge{cursor:default}
+.vix-group{margin-bottom:var(--vc-space-4)}
+.vix-group:last-child{margin-bottom:0}
+.vix{font-size:.8125rem}
+.vix th:first-child,.vix td:first-child{white-space:nowrap}
+.vix td{vertical-align:top}
+.vix .sym{font-family:var(--vc-font-mono);font-weight:600;font-size:.8125rem;color:var(--gc,var(--vc-info))}
+.vix .que{color:var(--vc-text-secondary);max-width:52ch}
+.vix .que b{color:#fff;font-weight:600}
+.vix .un,.vix .dom,.vix .val{font-family:var(--vc-font-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.vix .un{color:var(--vc-text-muted);font-size:.75rem}
+.vix .dom{color:var(--vc-text-muted);font-size:.75rem}
+.vix .val{color:#fff;text-align:right;font-weight:600}
+.vix tr.ojo td{background:rgba(255,141,114,.07)}
+.vix .flag{
+  display:inline-block;font-size:.5625rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--vc-warning);border:1px solid rgba(255,141,114,.4);border-radius:999px;padding:1px 6px;margin-left:6px;
+  vertical-align:2px;
+}
+@media (max-width:640px){
+  .vix .que{max-width:none}
+  .vix th,.vix td{padding:8px}
+}
 .note{
   border-left:3px solid var(--vc-info);background:rgba(29,140,248,.08);
   padding:var(--vc-space-3);border-radius:0 var(--vc-radius-sm) var(--vc-radius-sm) 0;font-size:.8125rem;
@@ -317,6 +375,7 @@ footer{padding:var(--vc-space-5) 0;color:var(--vc-text-muted);font-size:.75rem;t
     <div class="navlinks">
       <a href="#intro">Introducción</a>
       <a href="#guia">Cómo se maneja</a>
+      <a href="#variables">Variables</a>
       <a href="#lab">Laboratorio</a>
       <a href="#formulas">Fórmulas</a>
       <a href="#referencias">Referencias</a>
@@ -441,6 +500,82 @@ footer{padding:var(--vc-space-5) 0;color:var(--vc-text-muted);font-size:.75rem;t
         </p>
       </div>
     </div>
+    <p class="tiny muted" style="margin-top:var(--vc-space-3)">
+      Esto es el resumen. Si un símbolo no te dice nada — <span class="mono">C</span>, <span class="mono">τ</span>,
+      <span class="mono">P_est₀</span> — está explicado con palabras y con su valor de ahora en el
+      <a href="#variables">índice de variables</a>.
+    </p>
+  </div>
+</section>
+
+<!-- ============ ÍNDICE DE VARIABLES ============ -->
+<section id="variables">
+  <div class="wrap">
+    <span class="caption">Diccionario</span>
+    <h2>Índice de variables</h2>
+    <p class="muted">Qué es cada símbolo, en palabras, y de dónde sale su valor. La columna
+      <b style="color:#fff">Ahora</b> muestra el valor que tiene en este momento en el laboratorio:
+      cambia cuando mueves un control o cambias de escenario.</p>
+
+    <div class="vix-legend">
+      <span class="badge primary">Tú la mueves</span>
+      <span class="badge info">La fija el escenario</span>
+      <span class="badge warning">La calcula el modelo</span>
+    </div>
+
+    <div class="note warn" style="margin-bottom:var(--vc-space-4)">
+      <b>Dos símbolos repetidos, y conviene saberlo antes de empezar.</b><br>
+      <span class="mono">C</span> aparece con dos significados distintos: la <b>capacitancia eléctrica
+      conmutada</b> (en la fórmula de la potencia) y la <b>capacitancia térmica</b> (en el modelo del
+      disipador). En este índice la segunda se escribe <span class="mono">C_th</span> para no confundirlas.<br>
+      <span class="mono">R</span> igual: la <b>resistencia térmica</b> del disipador y el <b>rendimiento
+      relativo</b> del procesador. Aquí el rendimiento se escribe <span class="mono">R_rel</span>.
+    </div>
+
+    <div class="vix-group">
+      <div class="card-title"><span class="badge primary">Tú la mueves</span>
+        <h4>Variables independientes · los controles del panel</h4></div>
+      <div class="tablewrap">
+        <table class="vix" style="--gc:var(--vc-primary)">
+          <thead><tr>
+            <th>Símbolo</th><th>Qué es, en palabras</th><th>Unidad</th><th>Dominio</th><th style="text-align:right">Ahora</th>
+          </tr></thead>
+          <tbody id="ixA"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="vix-group">
+      <div class="card-title"><span class="badge info">La fija el escenario</span>
+        <h4>Constantes · no se mueven a mano, cambian al cambiar de escenario o de disipador</h4></div>
+      <div class="tablewrap">
+        <table class="vix" style="--gc:var(--vc-info)">
+          <thead><tr>
+            <th>Símbolo</th><th>Qué es, en palabras</th><th>Unidad</th><th style="text-align:right">Ahora</th>
+          </tr></thead>
+          <tbody id="ixB"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="vix-group">
+      <div class="card-title"><span class="badge warning">La calcula el modelo</span>
+        <h4>Variables dependientes y auxiliares · son la salida, no una entrada</h4></div>
+      <div class="tablewrap">
+        <table class="vix" style="--gc:var(--vc-warning)">
+          <thead><tr>
+            <th>Símbolo</th><th>Qué es, en palabras</th><th>Unidad</th><th style="text-align:right">Ahora</th>
+          </tr></thead>
+          <tbody id="ixC"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <p class="tiny muted" style="margin-top:var(--vc-space-3)">
+      Ninguna de las de la tercera tabla tiene deslizador, y no es un olvido: son el resultado de la
+      función. Fijarlas a mano sería como exigir que el termómetro marque 20 °C en pleno sol.
+      Toca una tarjeta del laboratorio y verás la cuenta exacta que produjo su valor.
+    </p>
   </div>
 </section>
 
@@ -514,7 +649,8 @@ footer{padding:var(--vc-space-5) 0;color:var(--vc-text-muted);font-size:.75rem;t
           </button>
         </div>
         <div class="ctrl-dom" style="margin-top:var(--vc-space-2)">
-          Cambiar una variable recalcula el <b>futuro</b> de la corrida, nunca el pasado.
+          Cambiar una variable recalcula el <b>futuro</b> de la corrida, nunca el pasado.<br>
+          <a href="#variables">¿Qué significa cada símbolo? →</a>
         </div>
       </div>
 
@@ -526,25 +662,33 @@ footer{padding:var(--vc-space-5) 0;color:var(--vc-text-muted);font-size:.75rem;t
           <div class="card">
             <div class="card-title"><span class="badge warning">Rango</span><h4>Variables dependientes</h4>
               <span class="tiny muted mono" style="margin-left:auto">t = <span id="tNow">0</span> s</span></div>
+            <p class="tiny muted" style="margin:0 0 var(--vc-space-2)">
+              Ninguna de estas cuatro se fija a mano: se calculan. <b>Toca una tarjeta</b> y se abre la cuenta
+              completa — la fórmula y la misma fórmula con los valores de ahora, para poder repetirla en papel.
+            </p>
             <div class="metrics">
-              <div class="metric locked" style="--m:var(--vc-info)" data-dep="La potencia depende del voltaje, la frecuencia efectiva y la carga: P = α·C·V² · f_ef + P_est">
+              <div class="metric locked" style="--m:var(--vc-info)" data-mid="P" tabindex="0" role="button" aria-controls="desglose" aria-expanded="false">
+                <span class="hint">ver cuenta</span>
                 <span class="caption">Potencia</span><div><span class="v" id="mP">0.0</span><span class="u">W</span></div>
                 <div class="fx">P = α·C·V²·f + P_est</div>
               </div>
-              <div class="metric locked" style="--m:var(--vc-danger)" data-dep="La temperatura depende de la potencia, del disipador (R y C) y del ambiente. No se puede fijar a mano.">
+              <div class="metric locked" style="--m:var(--vc-danger)" data-mid="T" tabindex="0" role="button" aria-controls="desglose" aria-expanded="false">
+                <span class="hint">ver cuenta</span>
                 <span class="caption">Temperatura</span><div><span class="v" id="mT">25.0</span><span class="u">°C</span></div>
                 <div class="fx">T ← modelo RC</div>
               </div>
-              <div class="metric locked" style="--m:var(--vc-success)" data-dep="La frecuencia efectiva depende de la temperatura mediante la política de throttling.">
+              <div class="metric locked" style="--m:var(--vc-success)" data-mid="F" tabindex="0" role="button" aria-controls="desglose" aria-expanded="false">
+                <span class="hint">ver cuenta</span>
                 <span class="caption">Frec. efectiva</span><div><span class="v" id="mFe">4.00</span><span class="u">GHz</span></div>
                 <div class="fx">f_ef ← throttling</div>
               </div>
-              <div class="metric locked" style="--m:var(--vc-primary)" data-dep="El rendimiento relativo es el promedio de f_ef dividido por la frecuencia objetivo.">
+              <div class="metric locked" style="--m:var(--vc-primary)" data-mid="R" tabindex="0" role="button" aria-controls="desglose" aria-expanded="false">
+                <span class="hint">ver cuenta</span>
                 <span class="caption">Rendimiento</span><div><span class="v" id="mR">100</span><span class="u">%</span></div>
                 <div class="fx">R = f̄_ef / f_obj</div>
               </div>
             </div>
-            <div class="dep-note" id="depNote" role="status" aria-live="polite"></div>
+            <div class="desglose" id="desglose" role="region" aria-live="polite" aria-label="Desglose de la cuenta"></div>
           </div>
 
           <!-- 3D -->
@@ -761,13 +905,34 @@ function throttle(fEf, T, esc, fObj){
 // F7: razón de cambio promedio
 const rcp = (fa,fb,a,b) => (b === a) ? null : (fb - fa) / (b - a);
 
+/* Foto de las entradas que produjeron una fila. Sin esto el desglose tendría que
+   adivinar con qué valores se calculó un paso pasado: los deslizadores ya se movieron. */
+function snapshot(e, d, fUsed, Tprev){
+  return {
+    alpha:S.alpha, C:e.C, V:S.V, fUsed, Pest0:e.Pest0, Vnom:e.Vnom,
+    R:d.R, Cth:d.Cth, Tamb:S.Tamb, Tprev, dt:DT,
+    Tthr:e.Tthr, Tcrit:e.Tcrit, hist:e.hist, dF:e.dF, fbase:e.fbase, fObj:S.fObj,
+    escN:e.nombre, disN:d.nombre
+  };
+}
+/* La fila t = 0 no es pasado: no hubo paso todavía. Por eso se recalcula cuando se
+   mueve un deslizador antes de arrancar — y por eso deja de recalcularse en cuanto
+   la corrida avanza (regla «se recalcula el futuro, nunca el pasado»). */
+function filaInicial(){
+  const e = esc(), d = dis();
+  const P = pTot(S.alpha, e.C, S.V, S.fEf, e.Pest0, e.Vnom);
+  return { t:0, P, T:S.T, F:S.fEf, evento:'inicio', thr:false,
+           rcpT:null, rcpP:null, rcpF:null, inp:snapshot(e, d, S.fEf, S.T) };
+}
+
 /* ============================================================
    ESTADO
    ============================================================ */
 const S = {
   esc:0, dis:1, V:1.20, fObj:4.0, alpha:1.0, Tamb:25,
   rows:[], t:0, T:25, fEf:4.0, running:false,
-  fn:'T', selA:null, selB:null, raf:null, nextTick:0
+  fn:'T', selA:null, selB:null, raf:null, nextTick:0,
+  desg:null   // 'P' | 'T' | 'F' | 'R' | null — tarjeta dependiente desplegada
 };
 const FN = {
   T:{ key:'T', label:'T(t)', unidad:'°C', color:'#fd5d93', nombre:'Temperatura' },
@@ -784,6 +949,7 @@ const fmt = (n,d=2) => (n===null||n===undefined||Number.isNaN(n)) ? '—' : n.to
    ============================================================ */
 function step(){
   const e = esc(), d = dis();
+  const Tprev = S.T;
   const P = pTot(S.alpha, e.C, S.V, S.fEf, e.Pest0, e.Vnom);
   const Tn = tNext(S.T, P, d.R, d.Cth, S.Tamb, DT);
   const fPrev = S.fEf;
@@ -801,6 +967,7 @@ function step(){
   const row = {
     t:S.t, P, T:Tn, F:fNew, evento,
     thr:esThr,
+    inp: snapshot(e, d, fPrev, Tprev),
     rcpT: prev ? rcp(prev.T, Tn, prev.t, S.t) : null,
     rcpP: prev ? rcp(prev.P, P,  prev.t, S.t) : null,
     rcpF: prev ? rcp(prev.F, fNew, prev.t, S.t) : null
@@ -817,8 +984,7 @@ function reset(){
   $('thrAlert').classList.remove('show');
   setPlayIcon(false);
   // fila inicial t = 0
-  S.rows.push({t:0,P:pTot(S.alpha,esc().C,S.V,S.fEf,esc().Pest0,esc().Vnom),T:S.T,F:S.fEf,
-               evento:'inicio',thr:false,rcpT:null,rcpP:null,rcpF:null});
+  S.rows.push(filaInicial());
   renderAll(true);
 }
 
@@ -1252,6 +1418,7 @@ function update3D(T){
    RENDER GLOBAL
    ============================================================ */
 function renderAll(full){
+  if(S.rows.length===1 && !S.running) S.rows[0]=filaInicial();
   const last=S.rows[S.rows.length-1]||{t:0,P:0,T:S.Tamb,F:S.fObj};
   $('tNow').textContent=last.t;
   $('mP').textContent=fmt(last.P,1);
@@ -1268,6 +1435,320 @@ function renderAll(full){
   } else $('thrAlert').classList.remove('show');
 
   renderTable(full); drawChart(); renderRCP(); renderReps(); update3D(last.T);
+  renderDesglose(); renderIndice();
+}
+
+/* ============================================================
+   DESGLOSE DE LA CUENTA — clic en una tarjeta dependiente
+   ------------------------------------------------------------
+   Cada tarjeta muestra un número; aquí se muestra de dónde salió:
+   la fórmula con símbolos y la MISMA fórmula con los valores que
+   están puestos ahora mismo, para poder repetirla a mano en papel.
+   Se alimenta de `fila.inp` (la foto de entradas del paso), nunca
+   de los deslizadores en vivo: así el desglose de un paso pasado
+   sigue siendo el desglose de ese paso.
+   ============================================================ */
+const SUPS={'-':'⁻','0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+const sup = n => String(n).split('').map(c=>SUPS[c]||c).join('');
+const pot10 = (mant,ex,d=2) => mant.toFixed(d)+'×10'+sup(ex);
+
+function desgloseP(r){
+  const i=r.inp;
+  const pd=pDin(i.alpha, i.C, i.V, i.fUsed*1e9);
+  const pe=pEst(i.Pest0, i.V, i.Vnom);
+  return {
+    titulo:'Potencia · P', color:'var(--vc-info)',
+    vars:'α = '+i.alpha.toFixed(3)+'  ·  C = '+(i.C*1e9).toFixed(2)+' nF  ·  V = '+i.V.toFixed(3)+' V  ·  '+
+         'f_ef = '+i.fUsed.toFixed(2)+' GHz  ·  P_est₀ = '+i.Pest0.toFixed(2)+' W  ·  V_nom = '+i.Vnom.toFixed(3)+' V',
+    pasos:[
+      {lbl:'F1 · Potencia dinámica',
+       eq:'P_din = α · C · V² · f_ef        (f_ef en Hz)',
+       num:'P_din = '+i.alpha.toFixed(3)+' · '+pot10(i.C*1e9,-9)+' · ('+i.V.toFixed(3)+')² · '+pot10(i.fUsed,9),
+       res:'P_din = '+pd.toFixed(2)+' W'},
+      {lbl:'F2 · Potencia estática',
+       eq:'P_est = P_est₀ · (V / V_nom)',
+       num:'P_est = '+i.Pest0.toFixed(2)+' · ('+i.V.toFixed(3)+' / '+i.Vnom.toFixed(3)+')',
+       res:'P_est = '+pe.toFixed(2)+' W'},
+      {lbl:'F3 · Potencia total',
+       eq:'P = P_din + P_est',
+       num:'P = '+pd.toFixed(2)+' + '+pe.toFixed(2),
+       res:'P = '+r.P.toFixed(2)+' W   →  en la tarjeta, redondeado: '+r.P.toFixed(1)+' W'}
+    ],
+    nota:'No es un control: P se calcula. '+(r.t>0
+      ? 'La f_ef que entra en F1 es la que regía al empezar este paso ('+i.fUsed.toFixed(2)+' GHz), no la que salió al final de él.'
+      : 'Mueve voltaje, frecuencia o carga y esta cuenta se rehace en el mismo momento.')
+  };
+}
+
+function desgloseT(r){
+  const i=r.inp;
+  if(r.t===0) return {
+    titulo:'Temperatura · T', color:'var(--vc-danger)',
+    vars:'T_amb = '+i.Tamb.toFixed(1)+' °C  ·  R = '+i.R.toFixed(2)+' °C/W  ·  C_th = '+i.Cth.toFixed(0)+' J/°C',
+    pasos:[
+      {lbl:'Condición inicial',
+       eq:'T(0) = T_amb',
+       num:'T(0) = '+i.Tamb.toFixed(1),
+       res:'T = '+r.T.toFixed(1)+' °C'}
+    ],
+    nota:'En t = 0 no ha pasado tiempo, así que no hay nada que integrar: el die está a la temperatura del aire. Pulsa Iniciar y aquí aparece el modelo RC completo.'
+  };
+  const Tinf=tInf(i.Tamb, r.P, i.R), tau=i.R*i.Cth, dec=Math.exp(-i.dt/tau);
+  return {
+    titulo:'Temperatura · T', color:'var(--vc-danger)',
+    vars:'T_amb = '+i.Tamb.toFixed(1)+' °C  ·  P = '+r.P.toFixed(2)+' W  ·  R = '+i.R.toFixed(2)+' °C/W  ·  '+
+         'C_th = '+i.Cth.toFixed(0)+' J/°C  ·  T(t−Δt) = '+i.Tprev.toFixed(2)+' °C  ·  Δt = '+i.dt+' s',
+    pasos:[
+      {lbl:'F5 · Temperatura de equilibrio',
+       eq:'T_∞ = T_amb + P · R',
+       num:'T_∞ = '+i.Tamb.toFixed(1)+' + '+r.P.toFixed(2)+' · '+i.R.toFixed(2),
+       res:'T_∞ = '+Tinf.toFixed(2)+' °C'},
+      {lbl:'Constante de tiempo térmica',
+       eq:'τ = R · C_th',
+       num:'τ = '+i.R.toFixed(2)+' · '+i.Cth.toFixed(0),
+       res:'τ = '+tau.toFixed(2)+' s'},
+      {lbl:'Factor de avance del paso',
+       eq:'k = e^(−Δt / τ)',
+       num:'k = e^(−'+i.dt+' / '+tau.toFixed(2)+')',
+       res:'k = '+dec.toFixed(5)},
+      {lbl:'F4 · Temperatura del die',
+       eq:'T(t) = T_∞ + ( T(t−Δt) − T_∞ ) · k',
+       num:'T = '+Tinf.toFixed(2)+' + ( '+i.Tprev.toFixed(2)+' − '+Tinf.toFixed(2)+' ) · '+dec.toFixed(5),
+       res:'T = '+r.T.toFixed(2)+' °C   →  en la tarjeta: '+r.T.toFixed(1)+' °C'}
+    ],
+    nota:'No es un control: T se calcula. El die persigue a T_∞ sin llegar de golpe — eso es lo que hace la exponencial, y por eso τ = '+tau.toFixed(2)+' s decide qué tan rápido sube.'
+  };
+}
+
+function desgloseFef(r){
+  const i=r.inp;
+  const hi=i.Tthr, lo=i.Tthr-i.hist;
+  if(r.t===0) return {
+    titulo:'Frecuencia efectiva · f_ef', color:'var(--vc-success)',
+    vars:'f_obj = '+i.fObj.toFixed(2)+' GHz  ·  f_base = '+i.fbase.toFixed(2)+' GHz  ·  '+
+         'T_umbral = '+hi.toFixed(0)+' °C  ·  h = '+i.hist.toFixed(0)+' °C  ·  Δf = '+i.dF.toFixed(2)+' GHz',
+    pasos:[
+      {lbl:'Condición inicial',
+       eq:'f_ef(0) = f_obj',
+       num:'f_ef(0) = '+i.fObj.toFixed(2),
+       res:'f_ef = '+r.F.toFixed(2)+' GHz'}
+    ],
+    nota:'Sin calor acumulado no hay recorte: la CPU arranca dando la frecuencia que se le pidió.'
+  };
+  let rama, eq, num;
+  if(r.T > hi){
+    rama='Rama 1 · T > T_umbral  →  recortar';
+    eq='f_ef = máx( f_base , f_ef(t−Δt) − Δf )';
+    num='f_ef = máx( '+i.fbase.toFixed(2)+' , '+i.fUsed.toFixed(2)+' − '+i.dF.toFixed(2)+' )';
+  } else if(r.T < lo){
+    rama='Rama 2 · T < T_umbral − h  →  recuperar';
+    eq='f_ef = mín( f_obj , f_ef(t−Δt) + Δf )';
+    num='f_ef = mín( '+i.fObj.toFixed(2)+' , '+i.fUsed.toFixed(2)+' + '+i.dF.toFixed(2)+' )';
+  } else {
+    rama='Rama 3 · zona de histéresis  →  mantener';
+    eq='f_ef = f_ef(t−Δt)';
+    num='f_ef = '+i.fUsed.toFixed(2);
+  }
+  return {
+    titulo:'Frecuencia efectiva · f_ef', color:'var(--vc-success)',
+    vars:'T = '+r.T.toFixed(2)+' °C  ·  f_ef(t−Δt) = '+i.fUsed.toFixed(2)+' GHz  ·  f_obj = '+i.fObj.toFixed(2)+' GHz  ·  '+
+         'f_base = '+i.fbase.toFixed(2)+' GHz  ·  Δf = '+i.dF.toFixed(2)+' GHz  ·  T_umbral = '+hi.toFixed(0)+' °C  ·  h = '+i.hist.toFixed(0)+' °C',
+    pasos:[
+      {lbl:'Qué rama aplica (F6 es definida por tramos)',
+       eq:'T > T_umbral  ·  T < T_umbral − h  ·  en medio: se mantiene',
+       num:'T = '+r.T.toFixed(2)+'   vs   T_umbral = '+hi.toFixed(0)+'   y   T_umbral − h = '+lo.toFixed(0),
+       res:rama},
+      {lbl:'F6 · Política de throttling',
+       eq:eq,
+       num:num,
+       res:'f_ef = '+r.F.toFixed(2)+' GHz'}
+    ],
+    nota:'No es un control: f_ef se calcula. La banda de '+i.hist.toFixed(0)+' °C (histéresis) existe para que la frecuencia no oscile en el filo del umbral.'
+  };
+}
+
+function desgloseR(r){
+  const fs=S.rows.map(x=>x.F), n=fs.length;
+  const suma=fs.reduce((a,b)=>a+b,0), media=suma/n;
+  const lista = n<=7
+    ? fs.map(v=>v.toFixed(2)).join(' + ')
+    : fs.slice(0,3).map(v=>v.toFixed(2)).join(' + ')+' + … + '+fs.slice(-2).map(v=>v.toFixed(2)).join(' + ');
+  return {
+    titulo:'Rendimiento relativo · R', color:'var(--vc-primary)',
+    vars:'n = '+n+' muestras (t = 0 … '+r.t+' s, una por segundo)  ·  Σ f_ef = '+suma.toFixed(2)+' GHz  ·  f_obj = '+S.fObj.toFixed(2)+' GHz',
+    pasos:[
+      {lbl:'Promedio aritmético de la frecuencia efectiva',
+       eq:'f̄_ef = ( f_ef(t₀) + f_ef(t₁) + … + f_ef(tₙ₋₁) ) / n',
+       num:'f̄_ef = ( '+lista+' ) / '+n+(n>7?'      (Σ = '+suma.toFixed(2)+')':''),
+       res:'f̄_ef = '+media.toFixed(4)+' GHz'},
+      {lbl:'F8 · Rendimiento relativo',
+       eq:'R = ( f̄_ef / f_obj ) · 100',
+       num:'R = ( '+media.toFixed(4)+' / '+S.fObj.toFixed(2)+' ) · 100',
+       res:'R = '+(media/S.fObj*100).toFixed(2)+' %   →  en la tarjeta: '+(media/S.fObj*100).toFixed(0)+' %'}
+    ],
+    nota:'Promedio aritmético a propósito, no Σ f_ef·Δt. Esa suma sería una acumulación (suma de Riemann), que es el eje de la Guía 6 y no el de esta.'
+  };
+}
+
+const DESGLOSES={P:desgloseP, T:desgloseT, F:desgloseFef, R:desgloseR};
+
+function renderDesglose(){
+  const box=$('desglose');
+  document.querySelectorAll('.metric[data-mid]').forEach(m=>{
+    const on = m.dataset.mid===S.desg;
+    m.classList.toggle('act', on);
+    m.setAttribute('aria-expanded', on ? 'true' : 'false');
+  });
+  const r=S.rows[S.rows.length-1];
+  if(!S.desg || !r || !r.inp){ box.classList.remove('show'); box.innerHTML=''; return; }
+  const d=DESGLOSES[S.desg](r);
+  box.style.setProperty('--m', d.color);
+  box.innerHTML=
+    '<div class="dg-head"><span class="caption">Cómo se calculó</span>'+
+      '<h5>'+d.titulo+'</h5>'+
+      '<span class="tiny muted mono">t = '+r.t+' s · '+r.inp.escN+' · '+r.inp.disN+'</span>'+
+      '<button type="button" class="dg-close" id="dgClose">Cerrar</button>'+
+    '</div>'+
+    '<div class="dg-vars"><b>VALORES CON LOS QUE SE CALCULÓ</b><br>'+d.vars+'</div>'+
+    d.pasos.map(p=>
+      '<div class="dg-step">'+
+        '<div class="dg-lbl">'+p.lbl+'</div>'+
+        '<div class="dg-eq">'+p.eq+'</div>'+
+        '<div class="dg-num">'+p.num+'</div>'+
+        '<div class="dg-res">'+p.res+'</div>'+
+      '</div>').join('')+
+    '<div class="dg-note">'+d.nota+' <a href="#variables">Qué es cada símbolo →</a></div>';
+  $('dgClose').addEventListener('click',ev=>{
+    ev.stopPropagation(); S.desg=null; renderDesglose();
+  });
+  box.classList.add('show');
+}
+
+/* ============================================================
+   ÍNDICE DE VARIABLES — el diccionario de la experiencia
+   ------------------------------------------------------------
+   Tres tablas: lo que el usuario mueve, lo que fija el escenario y
+   lo que calcula el modelo. Se generan desde datos (no HTML a mano)
+   porque la columna «Ahora» tiene que estar viva: si no lo estuviera,
+   el índice sería un texto que envejece a la primera corrida.
+   ============================================================ */
+const IX_A = [
+  {sim:'Escenario', un:'—', dom:'2 opciones',
+   que:'<b>Qué procesador se simula.</b> No es un número: al cambiarlo cambian de golpe C, P_est₀, V_nom, f_base, T_umbral y Δf. Un portátil se calienta y recorta antes que un equipo de escritorio.',
+   val:()=>esc().nombre},
+  {sim:'V', un:'V (voltio)', dom:()=>'['+esc().Vmin.toFixed(2)+', '+esc().Vmax.toFixed(2)+']',
+   que:'<b>Voltaje aplicado.</b> La «presión» eléctrica con la que se empujan los transistores. Es el control más caro de todos: la potencia crece con su <b>cuadrado</b>, así que subirlo un 20 % dispara el calor un 44 %.',
+   val:()=>S.V.toFixed(3)},
+  {sim:'f_obj', un:'GHz', dom:()=>'['+esc().fbase.toFixed(1)+', '+esc().fmax.toFixed(1)+']',
+   que:'<b>Frecuencia objetivo.</b> Cuántos miles de millones de ciclos por segundo se le <em>piden</em> a la CPU. Es una petición, no un hecho: si se calienta, el procesador no la cumple.',
+   val:()=>S.fObj.toFixed(2)},
+  {sim:'α', un:'adimensional', dom:'[0.1, 1.0]',
+   que:'<b>Carga de trabajo</b> (factor de actividad). Qué fracción de los transistores conmuta en cada ciclo. 100 % es la CPU a fondo — comprimir vídeo, compilar; 10 % es casi en reposo. Multiplica directamente la potencia dinámica.',
+   val:()=>S.alpha.toFixed(3)+'  ('+Math.round(S.alpha*100)+' %)'},
+  {sim:'T_amb', un:'°C', dom:'[10, 40]',
+   que:'<b>Temperatura ambiente.</b> La temperatura del aire alrededor del equipo. Es el piso de todo el modelo: el silicio nunca puede quedar por debajo de ella, y subirla desplaza toda la curva hacia arriba.',
+   val:()=>S.Tamb.toFixed(0)},
+  {sim:'Disipador', un:'—', dom:'4 opciones',
+   que:'<b>Con qué se enfría.</b> Tampoco es un número: elige la pareja R y C_th de las dos filas siguientes. De un pasivo a una refrigeración líquida, R baja de 0.95 a 0.18 °C/W.',
+   val:()=>dis().nombre}
+];
+
+const IX_B = [
+  {sim:'C', un:'nF (nanofaradio)', ojo:true, flag:'no es C_th',
+   que:'<b>Capacitancia eléctrica conmutada efectiva.</b> Cuánta carga hay que mover en cada conmutación de los transistores. Es lo que traduce «hacer cuentas» en «gastar energía»: sin capacitancia no habría calor. Se calibra para que la potencia a voltaje y frecuencia nominales coincida con el TDP publicado del escenario — es una calibración didáctica declarada, no un dato de fabricante.',
+   val:()=>(esc().C*1e9).toFixed(2)},
+  {sim:'P_est₀', un:'W (vatio)',
+   que:'<b>Potencia estática a voltaje nominal.</b> Lo que la CPU gasta por <em>fugas</em> aunque no esté haciendo nada: los transistores nunca cierran del todo. Es el suelo de la potencia — con α = 0 todavía se gastan estos vatios.',
+   val:()=>esc().Pest0.toFixed(2)},
+  {sim:'V_nom', un:'V',
+   que:'<b>Voltaje nominal del escenario.</b> El voltaje que el fabricante considera normal. No entra en el calor: sirve de vara de medir para la fuga (si pones V por encima de V_nom, la fuga crece en la misma proporción).',
+   val:()=>esc().Vnom.toFixed(3)},
+  {sim:'f_base', un:'GHz',
+   que:'<b>Frecuencia mínima garantizada.</b> El suelo al que puede llegar el recorte. Por mucho que se caliente, el procesador no baja de aquí: preferirá apagarse antes que ir más lento.',
+   val:()=>esc().fbase.toFixed(2)},
+  {sim:'T_umbral', un:'°C',
+   que:'<b>Temperatura de umbral del throttling.</b> El punto en el que la CPU decide protegerse y empieza a recortar frecuencia. Cruzarlo es lo que cierra el lazo de toda la experiencia.',
+   val:()=>esc().Tthr.toFixed(0)},
+  {sim:'h', un:'°C',
+   que:'<b>Histéresis.</b> Banda de seguridad por debajo del umbral. No recupera frecuencia hasta bajar de T_umbral − h. Existe para que la frecuencia no se ponga a oscilar justo en el filo del umbral.',
+   val:()=>esc().hist.toFixed(0)},
+  {sim:'Δf', un:'GHz',
+   que:'<b>Escalón de frecuencia.</b> Cuánto recorta (o recupera) en cada segundo. Recortar de golpe sería más eficaz y menos realista: los procesadores ajustan por pasos.',
+   val:()=>esc().dF.toFixed(2)},
+  {sim:'T_crit', un:'°C',
+   que:'<b>Temperatura crítica.</b> El límite a partir del cual la simulación marca alerta en la tabla. No cambia el cálculo: avisa.',
+   val:()=>esc().Tcrit.toFixed(0)},
+  {sim:'R', un:'°C/W', ojo:true, flag:'no es R_rel',
+   que:'<b>Resistencia térmica del disipador.</b> Cuántos grados sube el silicio por cada vatio que hay que sacar. <b>Menor es mejor</b>: con R = 0.18 °C/W, 100 W solo suben 18 °C sobre el ambiente; con R = 0.95, los mismos 100 W suben 95 °C.',
+   val:()=>dis().R.toFixed(2)},
+  {sim:'C_th', un:'J/°C',
+   que:'<b>Capacitancia térmica</b> del conjunto die + disipador. Cuánta energía hay que meterle para subirlo un grado, o sea su <em>inercia</em>. Alta significa que tarda en calentarse — y también en enfriarse.',
+   val:()=>dis().Cth.toFixed(0)},
+  {sim:'Δt', un:'s (segundo)',
+   que:'<b>Paso de tiempo de la simulación.</b> Vale 1 s y no se puede cambiar: la tabla avanza una fila por segundo para que los números se puedan copiar y comprobar a mano.',
+   val:()=>DT.toFixed(0)}
+];
+
+const IX_C = [
+  {sim:'t', un:'s',
+   que:'<b>Tiempo transcurrido</b> desde que se pulsó Iniciar. Es la variable independiente de las tres funciones que dibuja la gráfica.',
+   val:r=>r.t.toFixed(0)},
+  {sim:'P_din', un:'W',
+   que:'<b>Potencia dinámica.</b> La parte del gasto que se va en conmutar transistores. La que crece con V² y con la frecuencia, y por eso la que domina cuando se sube el voltaje.',
+   val:r=>pDin(r.inp.alpha,r.inp.C,r.inp.V,r.inp.fUsed*1e9).toFixed(2)},
+  {sim:'P_est', un:'W',
+   que:'<b>Potencia estática.</b> La parte que se pierde por fugas. Casi no depende de lo que la CPU esté haciendo, solo del voltaje.',
+   val:r=>pEst(r.inp.Pest0,r.inp.V,r.inp.Vnom).toFixed(2)},
+  {sim:'P', un:'W',
+   que:'<b>Potencia total disipada.</b> Todo el calor que la CPU está entregando al disipador en este instante. Es la entrada del modelo térmico: aquí la electricidad se convierte en temperatura.',
+   val:r=>r.P.toFixed(2)},
+  {sim:'T_∞', un:'°C',
+   que:'<b>Temperatura de equilibrio.</b> A dónde llegaría la temperatura si la potencia se quedara congelada para siempre. Es el techo al que el die <em>apunta</em>, no el que tiene. Si T_∞ está por encima del umbral, el throttling es inevitable — solo es cuestión de esperar.',
+   val:r=>tInf(r.inp.Tamb,r.P,r.inp.R).toFixed(2)},
+  {sim:'τ', un:'s',
+   que:'<b>Constante de tiempo térmica</b> (tau), τ = R · C_th. Cuánto tarda el sistema en reaccionar. En un τ recorre el 63 % del camino que le falta hasta T_∞; en tres τ ya está prácticamente ahí.',
+   val:r=>(r.inp.R*r.inp.Cth).toFixed(2)},
+  {sim:'k', un:'adimensional',
+   que:'<b>Factor de avance del paso</b>, k = e^(−Δt/τ). Qué fracción del desfase con T_∞ sobrevive un segundo. Cerca de 1 es un sistema lento; cerca de 0, uno que responde al instante.',
+   val:r=>Math.exp(-r.inp.dt/(r.inp.R*r.inp.Cth)).toFixed(5)},
+  {sim:'T(t)', un:'°C',
+   que:'<b>Temperatura del die.</b> La temperatura real del silicio en el instante t. Es la que dispara el throttling, y la única razón por la que este sistema no es una simple multiplicación.',
+   val:r=>r.T.toFixed(2)},
+  {sim:'f_ef(t)', un:'GHz',
+   que:'<b>Frecuencia efectiva.</b> La frecuencia que la CPU <em>de verdad</em> está dando. Igual a f_obj mientras el calor lo permita; por debajo cuando no. La diferencia entre f_obj y f_ef es exactamente lo que se pierde por calor.',
+   val:r=>r.F.toFixed(2)},
+  {sim:'f̄_ef', un:'GHz',
+   que:'<b>Frecuencia efectiva promedio</b> («f_ef barra») desde t = 0 hasta ahora. Promedio aritmético de todas las muestras, una por segundo.',
+   val:()=>(S.rows.reduce((a,x)=>a+x.F,0)/Math.max(1,S.rows.length)).toFixed(4)},
+  {sim:'R_rel', un:'%', ojo:true, flag:'no es R',
+   que:'<b>Rendimiento relativo.</b> Qué porcentaje de la frecuencia que se pidió se consiguió de verdad, en promedio. 100 % es «nunca recortó»; 80 % es «una quinta parte del trabajo se quedó en calor».',
+   val:()=>((S.rows.reduce((a,x)=>a+x.F,0)/Math.max(1,S.rows.length))/S.fObj*100).toFixed(2)},
+  {sim:'RCP', un:()=>FN[S.fn].unidad+'/s',
+   que:'<b>Razón de cambio promedio</b> entre los dos instantes t₁ y t₂ que elijas. Cuánto cambió la salida por cada segundo — la pendiente de la recta secante. Si cambia al mover el intervalo, la función no es lineal.',
+   val:()=>{
+     if(S.selA===null||S.selB===null) return '<span style="color:rgba(255,255,255,.3);font-weight:400">elige t₁ y t₂</span>';
+     const A=S.rows.find(x=>x.t===S.selA), B=S.rows.find(x=>x.t===S.selB);
+     if(!A||!B||A.t===B.t) return '<span style="color:rgba(255,255,255,.3);font-weight:400">—</span>';
+     return fmt(rcp(A[FN[S.fn].key],B[FN[S.fn].key],A.t,B.t),3);
+   }}
+];
+
+function ixFila(v,r,conDominio){
+  const dinamico = x => (typeof x==='function') ? x(r) : x;
+  return '<tr'+(v.ojo?' class="ojo"':'')+'>'+
+    '<td><span class="sym">'+v.sim+'</span>'+(v.flag?'<span class="flag">'+v.flag+'</span>':'')+'</td>'+
+    '<td class="que">'+v.que+'</td>'+
+    '<td class="un">'+dinamico(v.un)+'</td>'+
+    (conDominio ? '<td class="dom">'+dinamico(v.dom)+'</td>' : '')+
+    '<td class="val">'+dinamico(v.val)+'</td>'+
+  '</tr>';
+}
+function renderIndice(){
+  const r=S.rows[S.rows.length-1];
+  if(!r||!r.inp) return;
+  $('ixA').innerHTML=IX_A.map(v=>ixFila(v,r,true )).join('');
+  $('ixB').innerHTML=IX_B.map(v=>ixFila(v,r,false)).join('');
+  $('ixC').innerHTML=IX_C.map(v=>ixFila(v,r,false)).join('');
 }
 
 /* ============================================================
@@ -1302,10 +1783,16 @@ document.querySelectorAll('.fn-tab').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.fn-tab').forEach(x=>x.setAttribute('aria-selected','false'));
   b.setAttribute('aria-selected','true'); S.fn=b.dataset.fn; renderAll(true);
 }));
-document.querySelectorAll('.metric.locked').forEach(m=>m.addEventListener('click',()=>{
-  const n=$('depNote'); n.textContent='No es un control: '+m.dataset.dep;
-  n.classList.add('show'); clearTimeout(n._t); n._t=setTimeout(()=>n.classList.remove('show'),6500);
-}));
+document.querySelectorAll('.metric[data-mid]').forEach(m=>{
+  const abrir=()=>{
+    S.desg = (S.desg===m.dataset.mid) ? null : m.dataset.mid;
+    renderDesglose();
+  };
+  m.addEventListener('click',abrir);
+  m.addEventListener('keydown',ev=>{
+    if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); abrir(); }
+  });
+});
 $('btnPlay').addEventListener('click',()=>S.running?pause():play());
 $('btnReset').addEventListener('click',reset);
 window.addEventListener('resize',()=>{
